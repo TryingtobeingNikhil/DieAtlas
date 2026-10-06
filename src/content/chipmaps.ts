@@ -1,7 +1,7 @@
 import type { Kind, LT } from './types';
 import {
   type Rect, pad, union, center,
-  GPU_BOARD, GPU_PKGS, NVSWITCHES, NICS, HOST_TRAY, GPU0, SM0, SM0_IN,
+  GPU_BOARD, GPU_PKGS, NVSWITCHES, NICS, HOST_TRAY, GPU0, SM0, SM0_IN, HBM_OFF,
   CPU_BOARD, CPU_PKG, CPU_PKG_VIEW, CORES, CORE0, CORE0_IN, L3S, IOD, IOD_MEMCTL, IOD_PCIE, FABRIC_LINKS, DIMMS, VRMS, NVME, GPU_CARD, NUMA_GHOST, CCDS,
 } from '../art/geometry';
 
@@ -16,6 +16,10 @@ export interface ChipRegion {
   /** Map component (card, lessons). Groups without a component show their children instead. */
   comp?: string;
   desc?: LT;
+  /** Short mono name for the breadcrumb path, e.g. "GPU 0", "SM 0". */
+  crumb?: LT;
+  /** Datasheet key–value rows (Intermediate only). */
+  specs?: [string, string][];
   /** Name and text used once you are inside this region (e.g. "16 cores" → "Inside one core"). */
   inside?: { label: LT; desc: LT };
   rects: Rect[];
@@ -33,13 +37,6 @@ const P = (pts: [number, number][]) => 'M' + pts.map(([x, y]) => `${x.toFixed(1)
 
 // ------------------------------------------------------------------ GPU
 const p0 = GPU_PKGS[0], g = GPU0, si = SM0_IN;
-const hbmC = center(g.hbm[0]), l2C = center(g.l2[0]), smC = center(g.smTop);
-const gpuPkgFlows: Flow[] = [
-  { kind: 'mem', r: 4, dur: 2.6, d: P([[hbmC.x, hbmC.y], [g.die.x + 10, hbmC.y], [g.die.x + 10, l2C.y], [l2C.x, l2C.y], [l2C.x, g.smTop.y + g.smTop.h - 30]]) },
-  { kind: 'mem', r: 4, dur: 3.0, delay: 1.1, d: P([[center(g.hbm[5]).x, center(g.hbm[5]).y], [g.die.x + g.die.w - 10, center(g.hbm[5]).y], [g.die.x + g.die.w - 10, center(g.l2[1]).y], [center(g.l2[1]).x, center(g.l2[1]).y], [center(g.l2[1]).x, g.smBot.y + 40]]) },
-  { kind: 'mem', r: 4, dur: 2.8, delay: 0.5, d: P([[center(g.hbm[2]).x, center(g.hbm[2]).y], [g.die.x + 10, center(g.hbm[2]).y], [g.die.x + 10, l2C.y + 12], [smC.x - 60, l2C.y + 12], [smC.x - 60, g.smBot.y + 60]]) },
-  { kind: 'mem', r: 4, dur: 3.4, delay: 1.7, d: P([[p0.x + 500, p0.y - 20], [p0.x + 500, g.io[0].y + 6], [p0.x + 380, g.io[0].y + 6]]) },
-];
 const gpuServerFlows: Flow[] = GPU_PKGS.flatMap((pk, i) => {
   const sw = NVSWITCHES[i % 4], top = i < 4;
   const a: [number, number] = [pk.x + pk.w / 2, top ? pk.y + pk.h : pk.y];
@@ -49,42 +46,46 @@ const gpuServerFlows: Flow[] = GPU_PKGS.flatMap((pk, i) => {
     { kind: 'mem' as const, r: 13, dur: 2.1, delay: 0.9 + i * 0.17, d: P([b, [b[0] + 60, (a[1] + b[1]) / 2], [a[0] + 60, (a[1] + b[1]) / 2], [a[0] + 60, a[1]]]) },
   ];
 });
-const sp = si.inner[0], sp1 = si.inner[1];
-const smFlows: Flow[] = [
-  { kind: 'mem', r: 0.32, dur: 2.2, d: P([[center(si.smem).x - 8, center(si.smem).y], [center(sp.regs).x, si.smem.y], [center(sp.regs).x, center(sp.regs).y], [center(sp.lanes).x, center(sp.lanes).y]]) },
-  { kind: 'cpu', r: 0.3, dur: 1.6, delay: 0.4, d: P([[sp.sched.x + 1, center(sp.sched).y], [center(sp.sched).x, center(sp.sched).y], [center(sp.lanes).x - 1, sp.lanes.y + 1]]) },
-  { kind: 'cpu', r: 0.3, dur: 1.6, delay: 1.1, d: P([[sp1.sched.x + 1, center(sp1.sched).y], [center(sp1.sched).x, center(sp1.sched).y], [center(sp1.tensor).x, sp1.tensor.y + 1]]) },
-  { kind: 'mem', r: 0.32, dur: 2.4, delay: 1.3, d: P([[center(si.smem).x + 8, center(si.smem).y], [center(sp1.regs).x, si.smem.y], [center(sp1.regs).x, center(sp1.regs).y]]) },
-];
-
 export const GPU_WORLD: ChipWorld = {
   world: 'gpu',
   title: 'GPU world',
   reference: { b: 'An H100 GPU, top view. Click a part to look inside.', i: 'NVIDIA H100 SXM5 (2022) in a DGX H100 server. Stylised top view.' },
   initial: 'pkg',
   root: {
-    id: 'server', label: { b: 'AI server', i: 'DGX H100 server' }, kind: 'neutral', rects: [GPU_BOARD], focus: GPU_BOARD,
+    id: 'server', crumb: { b: 'AI server', i: 'DGX H100' }, label: { b: 'AI server', i: 'DGX H100 server' }, kind: 'neutral', rects: [GPU_BOARD], focus: GPU_BOARD,
     desc: { b: 'Eight GPUs on one board, wired so they can share work.', i: '8 × H100 SXM5 on one baseboard, all-to-all over NVLink via 4 NVSwitch chips.' },
+    specs: [['GPUs', '8 × H100 SXM5'], ['GPU memory', '640 GB HBM3'], ['NVSwitch', '4 chips'], ['NVLink', '900 GB/s per GPU'], ['Network', '8 × 400 Gb/s']],
     flows: gpuServerFlows,
     children: [
       {
-        id: 'pkg', label: { b: 'GPU 0', i: 'GPU 0 · H100' }, kind: 'gpu', rects: [p0], focus: pad(p0, 30), flows: gpuPkgFlows,
-        desc: { b: 'One GPU: a big chip covered in worker units, with stacked memory beside it.', i: 'H100 SXM5: 132 of 144 SMs enabled, 50 MB L2, 5 active HBM3 stacks (6 sites), PCIe 5.0 + NVLink 4.' },
+        id: 'pkg', crumb: 'GPU 0', label: { b: 'GPU 0', i: 'GPU 0 · H100' }, kind: 'gpu', rects: [p0], focus: pad(p0, 20),
+        desc: { b: 'One GPU: a big chip covered in worker units, with stacked memory beside it.', i: 'GH100 die on a silicon interposer with 6 HBM sites, 5 active.' },
+        specs: [['GPU', 'GH100 · H100 SXM5'], ['Die', '≈ 814 mm² · TSMC 4N'], ['SMs', '132 of 144 enabled'], ['FP32', '67 TFLOP/s'], ['BF16 tensor', '989.4 TFLOP/s dense'], ['L2', '50 MB'], ['HBM3', '80 GB · 3.35 TB/s']],
         children: [
           {
-            id: 'sms', comp: 'gpu.sms', label: { b: 'Worker units (SMs)', i: 'SMs' }, kind: 'gpu', rects: [g.smTop, g.smBot], focus: pad(SM0, 1.2), flows: smFlows,
-            inside: { label: { b: 'Inside one worker unit', i: 'SM 0 (1 of 132)' }, desc: { b: 'Four identical quarters, each with a turn-taker, a notepad and 32 math lanes.', i: '4 partitions × (warp scheduler, 64 KB registers, 32 FP32 lanes, 1 tensor core) + 256 KB L1/shared.' } },
+            id: 'sms', comp: 'gpu.sms', crumb: { b: 'Worker unit 0', i: 'SM 0' }, label: { b: 'Worker units', i: 'SMs · 8 GPCs' }, kind: 'gpu', rects: g.gpcs, labelOn: 0, focus: pad(SM0, 0.8),
+            inside: { label: { b: 'Inside one worker unit', i: 'SM 0 (1 of 132)' }, desc: { b: 'Four identical quarters. Each has a turn-taker, a notepad and rows of math lanes.', i: '4 partitions: warp scheduler, dispatch, 64 KB registers, 16 INT32 + 32 FP32 + 16 FP64 lanes, 1 tensor core, 8 LD/ST, SFUs.' } },
             children: [
-              { id: 'warpsched', comp: 'gpu.warpsched', label: { b: 'Turn-takers', i: 'Warp schedulers' }, kind: 'cpu', rects: si.inner.map(p => p.sched) },
-              { id: 'regfile', comp: 'gpu.regfile', label: { b: 'Notepad', i: 'Register file' }, kind: 'mem', rects: si.inner.map(p => p.regs) },
-              { id: 'fp32', comp: 'gpu.fp32', label: { b: 'Math lanes', i: 'FP32 lanes' }, kind: 'gpu', rects: si.inner.map(p => p.lanes) },
-              { id: 'tensor', comp: 'gpu.tensor', label: { b: 'Matrix engines', i: 'Tensor cores' }, kind: 'gpu', rects: si.inner.map(p => p.tensor) },
-              { id: 'smem', comp: 'gpu.smem', label: { b: 'Team scratchpad', i: 'Shared mem / L1' }, kind: 'mem', rects: [si.smem] },
+              { id: 'warpsched', comp: 'gpu.warpsched', label: { b: 'Turn-takers', i: 'Warp scheduler + dispatch' }, kind: 'cpu', rects: si.inner.flatMap(p => [p.sched, p.dispatch]) },
+              { id: 'regfile', comp: 'gpu.regfile', label: { b: 'Notepad', i: 'Register file' }, kind: 'mem', rects: si.inner.map(p => p.regs), labelOn: 1 },
+              { id: 'fp32', comp: 'gpu.fp32', label: { b: 'Math lanes', i: 'INT32 · FP32 · FP64' }, kind: 'gpu', rects: si.inner.flatMap(p => [p.fp32, p.int32, p.fp64]) },
+              { id: 'tensor', comp: 'gpu.tensor', label: { b: 'Matrix engines', i: 'Tensor cores' }, kind: 'gpu', rects: si.inner.map(p => p.tensor), labelOn: 1 },
+              { id: 'smem', comp: 'gpu.smem', label: { b: 'Team scratchpad', i: 'L1 / shared memory' }, kind: 'mem', rects: [si.smem] },
+              {
+                id: 'ldst', label: { b: 'Memory doors', i: 'LD/ST + SFU' }, kind: 'mem', rects: si.inner.flatMap(p => [p.ldst, p.sfu]), labelOn: 3,
+                desc: { b: 'Units that fetch data for the lanes, plus a few for tricky math like square roots.', i: 'Load/store units issue memory requests; SFUs compute transcendentals (sin, exp, rsqrt).' },
+                specs: [['LD/ST', '8 per partition · 32 per SM'], ['SFU', '4 per partition · 16 per SM']],
+              },
             ],
           },
-          { id: 'l2', comp: 'gpu.l2', label: { b: 'Shared store (L2)', i: 'L2 cache' }, kind: 'mem', rects: g.l2 },
-          { id: 'hbm', comp: 'gpu.hbm', label: { b: 'Stacked memory', i: 'HBM3' }, kind: 'mem', rects: g.hbm },
-          { id: 'io', comp: 'gpu.copy', label: { b: 'Link out', i: 'PCIe + NVLink I/O' }, kind: 'mem', rects: g.io },
+          { id: 'l2', comp: 'gpu.l2', label: { b: 'Shared store', i: 'L2 cache' }, kind: 'mem', rects: g.l2, labelOn: 1 },
+          { id: 'hbm', comp: 'gpu.hbm', label: { b: 'Stacked memory', i: 'HBM3 stacks' }, kind: 'mem', rects: g.hbm.filter((_, i) => i !== HBM_OFF) },
+          {
+            id: 'memctl', label: { b: 'Memory controllers', i: 'Memory controllers + PHY' }, kind: 'mem', rects: g.memctl,
+            desc: { b: 'The circuits along the chip’s edge that talk to the stacked memory.', i: 'Memory controllers and HBM PHYs on the die edges, wired to the stacks through the interposer.' },
+            specs: [['Controllers', '12 × 512-bit on die · 10 active'], ['Bus width', '5,120 bit (5 × 1,024)']],
+          },
+          { id: 'io', comp: 'gpu.copy', label: { b: 'Link out', i: 'PCIe + NVLink PHY' }, kind: 'mem', rects: g.io },
           { id: 'blocksched', comp: 'gpu.blocksched', label: { b: 'Handout desk', i: 'Block scheduler' }, kind: 'cpu', rects: [g.blockSched] },
         ],
       },
