@@ -23,6 +23,8 @@ export interface MapComponent {
   friendly: string;
   /** One key number for Intermediate, e.g. "32 KB · 8-way". Must come from specs. */
   num?: string;
+  /** Datasheet key–value rows (Intermediate only). */
+  specs?: [string, string][];
   /** Hover one-liner. */
   hover: LT;
   /** Card teaser. */

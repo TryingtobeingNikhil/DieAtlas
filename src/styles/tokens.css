@@ -28,6 +28,11 @@
   --shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
   --shadow-pop: 0 14px 40px rgba(0, 0, 0, 0.55);
   --glow: 0.55;
+  --silicon: #08100b;
+  --interposer: #101914;
+  --substrate: #0d1510;
+  --bevel-hi: rgba(227, 242, 232, 0.24);
+  --bevel-lo: rgba(0, 0, 0, 0.7);
 }
 
 :root[data-theme='light'] {
@@ -55,6 +60,11 @@
   --shadow: 0 8px 24px rgba(14, 26, 19, 0.1);
   --shadow-pop: 0 12px 32px rgba(14, 26, 19, 0.16);
   --glow: 0.3;
+  --silicon: #e2eae4;
+  --interposer: #ecf1ed;
+  --substrate: #f5f8f5;
+  --bevel-hi: rgba(255, 255, 255, 0.95);
+  --bevel-lo: rgba(14, 26, 19, 0.28);
 }
 
 :root {
@@ -63,7 +73,21 @@
   --mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
   --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
   --r-sm: 6px;
-  --r: 10px;
-  --r-lg: 14px;
+  --r: 8px;
+  --r-lg: 8px;
   --content: 1160px;
+
+  /* ---- drawing kit: engineering-drawing rules, used by every chip view ---- */
+  --stroke-hair: 1px;        /* structure */
+  --stroke-detail: 0.5px;    /* internal detail */
+  --stroke-active: 1.5px;    /* selected / active only */
+  --r-silicon: 1px;          /* dies, blocks, arrays */
+  --r-package: 4px;          /* substrate */
+  --r-card: 8px;             /* UI cards */
+  --r-btn: 6px;              /* buttons */
+  --a-idle: 7%;              /* idle region tint */
+  --a-hover: 12%;
+  --a-active: 20%;
+  --dim-neighbour: 0.5;      /* brightness hierarchy */
+  --dim-far: 0.75;
 }

@@ -4,6 +4,7 @@
 html, body { margin: 0; }
 html { -webkit-text-size-adjust: 100%; }
 body {
+  font-variant-numeric: tabular-nums;
   background-color: var(--bg);
   color: var(--text);
   font: 400 15px/1.6 var(--sans);
@@ -36,7 +37,7 @@ p { margin: 0; }
 
 /* ---------- controls ---------- */
 .card { background: var(--surface); border: 1px solid var(--hairline); border-radius: var(--r-lg); box-shadow: var(--shadow); }
-.btn { display: inline-flex; align-items: center; gap: 8px; height: 36px; padding: 0 14px; border-radius: 8px; border: 1px solid var(--hairline-2);
+.btn { display: inline-flex; align-items: center; gap: 8px; height: 34px; padding: 0 13px; border-radius: var(--r-btn); border: 1px solid var(--hairline-2);
   background: var(--surface); font-size: 14px; font-weight: 500; color: var(--text); white-space: nowrap;
   transition: border-color 200ms var(--ease), background 200ms var(--ease), transform 200ms var(--ease); }
 .btn:hover { border-color: var(--muted); }
@@ -46,11 +47,11 @@ p { margin: 0; }
 .btn-ghost:hover { color: var(--text); border-color: var(--hairline-2); }
 .btn-primary { background: var(--gpu); color: var(--on-primary); border-color: transparent; font-weight: 600; }
 .btn-primary:hover { border-color: transparent; filter: brightness(1.07); }
-.btn-sm { height: 30px; padding: 0 10px; font-size: 13px; border-radius: 7px; }
+.btn-sm { height: 28px; padding: 0 10px; font-size: 13px; border-radius: var(--r-btn); }
 .kbd { font: 500 10.5px/1 var(--mono); padding: 3px 5px; border-radius: 4px; border: 1px solid var(--hairline-2); border-bottom-width: 2px; color: var(--muted); }
-.pill { display: inline-flex; align-items: center; gap: 6px; height: 22px; padding: 0 9px; border-radius: 999px; border: 1px solid var(--hairline); background: var(--surface-2); font-size: 12px; color: var(--text-2); white-space: nowrap; }
-.seg { display: inline-flex; padding: 2px; border-radius: 999px; border: 1px solid var(--hairline); background: var(--surface-2); }
-.seg button { height: 28px; padding: 0 12px; border-radius: 999px; font-size: 13px; color: var(--muted); transition: background 200ms var(--ease), color 200ms var(--ease); }
+.pill { display: inline-flex; align-items: center; gap: 6px; height: 22px; padding: 0 8px; border-radius: 3px; border: 1px solid var(--hairline); background: var(--surface-2); font-size: 12px; color: var(--text-2); white-space: nowrap; }
+.seg { display: inline-flex; padding: 2px; border-radius: var(--r-btn); border: 1px solid var(--hairline); background: var(--surface-2); }
+.seg button { height: 26px; padding: 0 11px; border-radius: 4px; font-size: 13px; color: var(--muted); transition: background 200ms var(--ease), color 200ms var(--ease); }
 .seg button[aria-pressed='true'] { background: var(--text); color: var(--bg); }
 .seg button:hover:not([aria-pressed='true']) { color: var(--text); }
 .link { color: var(--text); text-decoration: underline; text-decoration-color: var(--hairline-2); text-underline-offset: 3px; }
@@ -67,7 +68,7 @@ p { margin: 0; }
 .nav a:hover { color: var(--text); }
 .nav a[aria-current='page'] { color: var(--text); background: var(--surface-2); box-shadow: inset 0 0 0 1px var(--hairline); }
 .topbar .right { margin-left: auto; display: flex; align-items: center; gap: 8px; }
-.iconbtn { width: 34px; height: 34px; display: inline-grid; place-items: center; border-radius: 8px; color: var(--muted); border: 1px solid transparent; }
+.iconbtn { width: 32px; height: 32px; display: inline-grid; place-items: center; border-radius: var(--r-btn); color: var(--muted); border: 1px solid transparent; }
 .iconbtn:hover { color: var(--text); border-color: var(--hairline-2); }
 .toast { position: fixed; left: 50%; bottom: 28px; z-index: 80; transform: translate(-50%, 12px); opacity: 0; pointer-events: none;
   background: var(--raised); border: 1px solid var(--hairline-2); border-radius: 10px; padding: 10px 16px; font-size: 13.5px; box-shadow: var(--shadow-pop);
@@ -117,45 +118,117 @@ p { margin: 0; }
 
 /* ---------- chip maps ---------- */
 .chipmap { position: relative; height: calc(100vh - 56px); min-height: 560px; overflow: hidden; }
-.cm-canvas { position: absolute; inset: 0; touch-action: none; cursor: grab; }
+.cm-canvas { position: absolute; inset: 0; overflow: hidden; touch-action: none; cursor: grab; }
 .cm-canvas.dragging { cursor: grabbing; }
-.cm-canvas > svg { width: 100%; height: 100%; display: block; }
+.cm-canvas > svg.cm-art { position: absolute; left: -25%; top: -25%; width: 150%; height: 150%; display: block; }
+.cm-canvas > svg.cm-art.moving { will-change: transform; }
 .cm-head { position: absolute; left: 20px; top: 16px; z-index: 6; display: grid; gap: 6px; max-width: 560px; pointer-events: none; }
 .cm-head > * { pointer-events: auto; justify-self: start; }
 .cm-title { display: flex; gap: 10px; align-items: center; font: 600 22px/1.2 var(--display); }
-.crumbline { display: flex; gap: 4px; align-items: center; flex-wrap: wrap; font-size: 13px; color: var(--muted); }
-.crumbline button { padding: 2px 6px; border-radius: 6px; color: var(--text-2); }
-.crumbline button:hover { background: var(--surface-2); color: var(--text); }
-.crumbline button[aria-current='location'] { color: var(--text); font-weight: 600; }
-.cm-ctl { position: absolute; left: 20px; bottom: 18px; z-index: 6; display: flex; gap: 6px; }
-.rg { fill: transparent; stroke: var(--kc); stroke-width: 1.5; cursor: pointer; transition: fill 200ms var(--ease), filter 200ms var(--ease), stroke-width 200ms var(--ease); }
-.rg:hover, .rg.hov { fill: color-mix(in srgb, var(--kc) 16%, transparent); filter: drop-shadow(0 0 8px color-mix(in srgb, var(--kc) calc(var(--glow) * 100%), transparent)); }
-.rg.sel { fill: color-mix(in srgb, var(--kc) 22%, transparent); stroke-width: 2.5; filter: drop-shadow(0 0 10px color-mix(in srgb, var(--kc) calc(var(--glow) * 110%), transparent)); }
-.rg:focus-visible { outline: none; stroke-width: 3; }
-.spot { fill: var(--bg); opacity: 0.62; pointer-events: all; cursor: zoom-out; transition: opacity 300ms var(--ease); }
-.cm-labels { position: absolute; inset: 0; pointer-events: none; z-index: 4; }
-.cm-label { position: absolute; left: 0; top: 0; pointer-events: auto; cursor: pointer; display: inline-flex; flex-direction: column; align-items: flex-start; gap: 1px;
-  padding: 3px 8px; border-radius: 6px; background: color-mix(in srgb, var(--bg) 82%, transparent); border: 1px solid color-mix(in srgb, var(--kc) 55%, transparent);
-  font: 600 12.5px/1.25 var(--sans); color: var(--text); white-space: nowrap; box-shadow: 0 2px 8px rgba(0,0,0,.25); }
-.cm-label .g { color: var(--kc); margin-right: 5px; }
-.cm-label .n { font: 400 11px var(--mono); color: var(--muted); }
-.cm-label.sel { border-color: var(--kc); box-shadow: 0 0 0 1px var(--kc), 0 0 14px color-mix(in srgb, var(--kc) calc(var(--glow) * 100%), transparent); }
-.cm-label.into::after { content: '⤢'; position: absolute; right: -6px; top: -8px; font-size: 11px; color: var(--kc); background: var(--bg); border-radius: 4px; padding: 0 2px; }
 .tip { position: absolute; left: 0; top: 0; z-index: 20; pointer-events: none; max-width: 300px; padding: 8px 12px; border-radius: 8px; font-size: 13px; line-height: 1.45;
   background: var(--raised); border: 1px solid var(--hairline-2); box-shadow: var(--shadow-pop); opacity: 0; transition: opacity 150ms var(--ease); }
 .tip.on { opacity: 1; }
-.cm-card { position: absolute; right: 16px; top: 16px; bottom: 16px; z-index: 7; width: 340px; overflow: auto; padding: 18px 20px; border-radius: 14px;
-  background: var(--surface); border: 1px solid var(--hairline-2); box-shadow: var(--shadow-pop); display: flex; flex-direction: column; gap: 12px; }
-.cm-card h3 { font-size: 18px; display: flex; gap: 8px; align-items: baseline; }
 .cm-card .techsub { font: 400 12px var(--mono); color: var(--muted); }
 .cm-card .teaser { color: var(--text-2); font-size: 14px; }
-.cm-inside { display: flex; flex-wrap: wrap; gap: 6px; }
 .lessonlist { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
 .lessonlist a { display: grid; grid-template-columns: 18px 1fr; gap: 2px 10px; align-items: start; padding: 8px 10px; margin: 0 -10px; border-radius: 8px; font-size: 14px; }
 .lessonlist a:hover { background: var(--surface-2); }
 .lessonlist .lvtag { grid-column: 2; justify-self: start; }
 .soonline { font-size: 13px; color: var(--muted); }
 .lvtag { font: 600 10px var(--sans); letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); border: 1px solid var(--hairline-2); border-radius: 4px; padding: 1px 5px; }
+
+
+/* ================= drawing kit: chip views as engineering drawings ================= */
+.gpu-art .board { fill: var(--die-a); stroke: var(--hairline); stroke-width: 1px; }
+.gpu-art .substrate { fill: var(--substrate); stroke: var(--hairline-2); stroke-width: 1px; }
+.gpu-art .interposer { fill: var(--interposer); stroke: color-mix(in srgb, var(--text) 16%, transparent); stroke-width: 1px; }
+.gpu-art .die { fill: var(--silicon); stroke: color-mix(in srgb, var(--text) 32%, transparent); stroke-width: 1px; }
+.gpu-art .seal { fill: none; stroke: color-mix(in srgb, var(--text) 20%, transparent); stroke-width: 0.5px; }
+.gpu-art .pads { fill: color-mix(in srgb, var(--text) 30%, transparent); }
+.gpu-art .caps { fill: color-mix(in srgb, var(--cpu) 22%, var(--substrate)); }
+.gpu-art .wires { fill: none; stroke: color-mix(in srgb, var(--mem) 24%, transparent); stroke-width: 0.5px; }
+.gpu-art .hbm-body { fill: color-mix(in srgb, var(--mem) 5%, var(--silicon)); }
+.gpu-art .bevel-hi { fill: none; stroke: var(--bevel-hi); stroke-width: 1px; }
+.gpu-art .bevel-lo { fill: none; stroke: var(--bevel-lo); stroke-width: 1px; }
+.gpu-art .hair-mem { stroke: color-mix(in srgb, var(--mem) 45%, transparent); stroke-width: 0.5px; }
+.gpu-art .det-mem { stroke: color-mix(in srgb, var(--mem) 22%, transparent); stroke-width: 0.5px; }
+.gpu-art .k-off { opacity: 0.35; }
+.gpu-art .die-note { font: 500 9px var(--mono); fill: var(--muted); }
+.gpu-art .logic-mem { fill: url(#sc-mem); stroke: color-mix(in srgb, var(--mem) 45%, transparent); stroke-width: 0.5px; }
+.gpu-art .logic-cpu { fill: url(#sc-cpu); stroke: color-mix(in srgb, var(--cpu) 50%, transparent); stroke-width: 1px; }
+.gpu-art .logic-cpu-f { fill: url(#sc-cpu-f); stroke: color-mix(in srgb, var(--cpu) 45%, transparent); stroke-width: 0.5px; }
+.gpu-art .arr-mem { fill: url(#bc-mem); stroke: color-mix(in srgb, var(--mem) 38%, transparent); stroke-width: 0.5px; }
+.gpu-art .arr-mem-f { fill: url(#bc-mem-f); stroke: color-mix(in srgb, var(--mem) 40%, transparent); stroke-width: 0.5px; }
+.gpu-art .blk-gpu { fill: none; stroke: color-mix(in srgb, var(--gpu) 40%, transparent); stroke-width: 1px; }
+.gpu-art .blk-mem { fill: none; stroke: color-mix(in srgb, var(--mem) 45%, transparent); stroke-width: 1px; }
+.gpu-art .t-gpu { fill: color-mix(in srgb, var(--gpu) 7%, transparent); }
+.gpu-art .t-gpu2 { fill: color-mix(in srgb, var(--gpu) 15%, transparent); }
+.gpu-art .t-mem { fill: color-mix(in srgb, var(--mem) 9%, transparent); }
+.gpu-art .t-cpu { fill: color-mix(in srgb, var(--cpu) 10%, transparent); }
+.gpu-art .det-line { stroke: color-mix(in srgb, var(--text) 18%, transparent); stroke-width: 0.5px; }
+.gpu-art .sm-out { fill: color-mix(in srgb, var(--gpu) 7%, var(--silicon)); stroke: color-mix(in srgb, var(--gpu) 60%, transparent); stroke-width: 0.5px; }
+.gpu-art .t-edge-cpu { stroke: color-mix(in srgb, var(--cpu) 40%, transparent); stroke-width: 0.5px; }
+.gpu-art .t-edge-mem { stroke: color-mix(in srgb, var(--mem) 40%, transparent); stroke-width: 0.5px; }
+.gpu-art .sm-off { opacity: 0.25; }
+.gpu-art .sm-detail .sm-out-hi { fill: var(--silicon); stroke: color-mix(in srgb, var(--gpu) 65%, transparent); stroke-width: 1px; }
+.gpu-art .lane { fill: color-mix(in srgb, var(--gpu) 14%, transparent); stroke: color-mix(in srgb, var(--gpu) 50%, transparent); stroke-width: 0.5px; }
+.gpu-art .lane64 { fill: color-mix(in srgb, var(--gpu) 7%, transparent); stroke: color-mix(in srgb, var(--gpu) 35%, transparent); }
+.gpu-art .mac { fill: url(#mac-f); stroke: color-mix(in srgb, var(--gpu) 60%, transparent); stroke-width: 0.5px; }
+.gpu-art .unit-mem { fill: color-mix(in srgb, var(--mem) 10%, transparent); stroke: color-mix(in srgb, var(--mem) 45%, transparent); stroke-width: 0.5px; }
+.gpu-art .unit-gpu { fill: color-mix(in srgb, var(--gpu) 8%, transparent); stroke: color-mix(in srgb, var(--gpu) 40%, transparent); stroke-width: 0.5px; }
+.gpu-art .phy { fill: color-mix(in srgb, var(--mem) 28%, transparent); }
+.gpu-art .ghost { fill: none; stroke: var(--muted); stroke-dasharray: 4 4; stroke-width: 0.5px; }
+
+/* regions: invisible until hovered; 1 px edge, 1.5 px only when selected; tight bloom */
+.rg { fill: transparent; stroke: transparent; stroke-width: 1px; cursor: pointer; transition: fill 200ms var(--ease), stroke 200ms var(--ease); }
+.rg:hover, .rg.hov { fill: color-mix(in srgb, var(--kc) var(--a-hover), transparent); stroke: var(--kc); filter: drop-shadow(0 0 2px color-mix(in srgb, var(--kc) 45%, transparent)); }
+.rg.sel { fill: color-mix(in srgb, var(--kc) var(--a-active), transparent); stroke: var(--kc); stroke-width: var(--stroke-active); filter: drop-shadow(0 0 3px color-mix(in srgb, var(--kc) 55%, transparent)); }
+.rg:focus-visible { outline: none; stroke: var(--kc); stroke-width: var(--stroke-active); }
+.dim { fill: var(--bg); cursor: zoom-out; }
+.dim-near { opacity: var(--dim-neighbour); }
+.dim-far { opacity: var(--dim-far); }
+
+.cm-signals { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.cm-anno { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; overflow: visible; }
+.cm-anno .ticks { stroke: color-mix(in srgb, var(--muted) 45%, transparent); stroke-width: 1; fill: none; }
+.leader { fill: none; stroke: color-mix(in srgb, var(--text-2) 45%, transparent); stroke-width: 0.75; transition: stroke 150ms var(--ease); }
+.leader-dot { fill: var(--kc); opacity: 0.8; }
+.lead-on .leader { stroke: var(--kc); stroke-width: 1; }
+.cm-callouts { position: absolute; inset: 0; pointer-events: none; }
+.callout { position: absolute; left: 0; top: 0; pointer-events: auto; display: grid; gap: 1px; padding: 2px 4px; text-align: left; border-radius: 2px;
+  background: color-mix(in srgb, var(--bg) 88%, transparent); white-space: nowrap; max-width: 200px; }
+.callout .c1 { font: 600 11px/1.3 var(--sans); letter-spacing: 0.06em; text-transform: uppercase; color: var(--text); }
+.callout .c1 .g { color: var(--kc); margin-right: 5px; letter-spacing: 0; }
+.callout .c2 { font: 400 10.5px/1.3 var(--mono); color: var(--muted); }
+.callout .c3 { font: 400 10.5px/1.3 var(--mono); color: color-mix(in srgb, var(--kc) 80%, var(--text)); }
+.callout:hover .c1, .callout.hov .c1, .callout.sel .c1 { color: var(--kc); }
+.callout.sel { box-shadow: inset 0 -1px 0 var(--kc); }
+.cm-foot { position: absolute; left: 16px; right: calc(340px + 40px); bottom: 12px; z-index: 6; display: flex; align-items: center; gap: 18px; flex-wrap: wrap; pointer-events: none; }
+.cm-foot > * { pointer-events: auto; }
+.cm-ctl { display: flex; gap: 4px; }
+.scalebar path { fill: none; stroke: var(--text-2); stroke-width: 1; }
+.scalebar text { font: 400 10.5px var(--mono); fill: var(--muted); }
+.legend { display: flex; gap: 12px; font: 400 11px var(--mono); }
+.cm-foot .legend, .cm-foot .clock, .cm-foot .scalebar { background: color-mix(in srgb, var(--bg) 85%, transparent); padding: 3px 6px; border-radius: 2px; }
+.clock { margin-left: auto; font: 400 11px/1.4 var(--mono); color: var(--muted); text-align: right; max-width: 520px; }
+.crumbline { display: flex; gap: 2px; align-items: center; flex-wrap: wrap; font: 400 12px var(--mono); color: var(--muted); }
+.crumbline .sep { margin: 0 4px; color: var(--hairline-2); }
+.crumbline button { padding: 1px 3px; border-radius: 3px; color: var(--muted); font: inherit; }
+.crumbline button:hover { color: var(--text); }
+.crumbline button[aria-current='location'] { color: var(--text); }
+
+/* datasheet panel */
+.cm-card { position: absolute; right: 16px; top: 14px; bottom: 14px; z-index: 7; width: 340px; overflow: auto; padding: 16px 18px; border-radius: var(--r-card);
+  background: var(--surface); border: 1px solid var(--hairline); box-shadow: var(--shadow); display: flex; flex-direction: column; gap: 12px; }
+.cm-card h3 { font-size: 18px; font-weight: 600; display: flex; gap: 8px; align-items: baseline; }
+.ds-kicker { font: 500 10.5px var(--mono); color: var(--muted); letter-spacing: 0.04em; text-transform: uppercase; display: flex; gap: 6px; align-items: center; }
+.kv { width: 100%; border-collapse: collapse; font: 400 12px/1.45 var(--mono); }
+.kv th { text-align: left; font-weight: 400; color: var(--muted); padding: 4px 10px 4px 0; border-top: 1px solid var(--hairline); white-space: nowrap; vertical-align: top; }
+.kv td { color: var(--text); padding: 4px 0; border-top: 1px solid var(--hairline); }
+.inside { list-style: none; margin: 0; padding: 0; display: grid; }
+.inside button { display: flex; gap: 8px; align-items: baseline; width: 100%; text-align: left; padding: 5px 0; font-size: 13.5px; color: var(--text-2); border-top: 1px solid var(--hairline); }
+.inside li:first-child button { border-top: 0; }
+.inside button:hover { color: var(--text); }
 
 /* ---------- lesson ---------- */
 .lesson-head { display: grid; gap: 10px; margin-bottom: 18px; }
@@ -343,7 +416,8 @@ p { margin: 0; }
   .cm-canvas { position: relative; height: 62vh; min-height: 380px; }
   .cm-card { position: static; width: auto; margin: 12px 16px 80px; }
   .cm-head { left: 12px; top: 10px; }
-  .cm-ctl { position: absolute; top: calc(62vh - 48px); bottom: auto; left: 12px; }
+  .cm-foot { right: 12px; }
+  .cm-foot .legend, .cm-foot .clock { display: none; }
 }
 @media (max-width: 720px) {
   .topbar { gap: 12px; padding: 0 14px; }

@@ -1,7 +1,6 @@
 import { memo } from 'react';
 import {
-  type Rect, sub, gpuPackage, smInside, SM_OFF, GPU_PKGS, NVSWITCHES, NICS, HOST_TRAY, GPU_BOARD,
-  CPU_BOARD, CPU_PKG, CCDS, ccdCores, ccdL3, coreInside, IOD, IOD_MEMCTL, IOD_PCIE, FABRIC_LINKS, DIMMS, VRMS, NVME, GPU_CARD, PCIE_SLOT, NUMA_GHOST,
+  type Rect, CPU_BOARD, CPU_PKG, CCDS, ccdCores, ccdL3, coreInside, IOD, IOD_MEMCTL, IOD_PCIE, FABRIC_LINKS, DIMMS, VRMS, NVME, GPU_CARD, PCIE_SLOT, NUMA_GHOST,
 } from './geometry';
 import type { Flow } from '../content/chipmaps';
 
@@ -41,91 +40,6 @@ export function Mover({ f }: { f: Flow }) {
     </g>
   );
 }
-
-// ------------------------------------------------------------------ GPU
-function SmDetail({ s }: { s: Rect }) {
-  const si = smInside(s);
-  return (
-    <g>
-      {si.parts.map((p, i) => <R key={i} r={p} c="a-fine" />)}
-      {si.inner.map((q, i) => (
-        <g key={i}>
-          <R r={q.sched} c="a-cpu" />
-          <R r={q.regs} c="a-mem" />
-          <Sram r={q.regs} step={q.regs.w / 16} vertical />
-          <R r={q.lanes} c="a-gpu" />
-          {Array.from({ length: 32 }, (_, k) => {
-            const c = sub(q.lanes, 0.04 + (k % 8) * 0.12, 0.08 + Math.floor(k / 8) * 0.23, 0.09, 0.17);
-            return <rect key={k} className="a-gpu" x={c.x} y={c.y} width={c.w} height={c.h} />;
-          })}
-          <R r={q.tensor} c="a-gpu" />
-          <R r={sub(q.tensor, 0.15, 0.15, 0.7, 0.7)} c="a-gpu" />
-        </g>
-      ))}
-      <R r={si.smem} c="a-mem" />
-      <Sram r={si.smem} step={si.smem.w / 40} vertical />
-    </g>
-  );
-}
-
-export const GpuPackageArt = memo(function GpuPackageArt({ p, detail = false }: { p: Rect; detail?: boolean }) {
-  const g = gpuPackage(p);
-  return (
-    <g>
-      <rect className="a-sub" x={p.x} y={p.y} width={p.w} height={p.h} rx={18} />
-      {g.hbm.map((h, i) => (
-        <g key={i}>
-          <R r={h} c="a-mem-solid" rx={4} />
-          <Sram r={sub(h, 0.08, 0.08, 0.84, 0.84)} step={h.h / 9} />
-        </g>
-      ))}
-      <rect className="a-die" x={g.die.x} y={g.die.y} width={g.die.w} height={g.die.h} rx={4} />
-      {g.gpcs.map((r, i) => <rect key={i} className="a-fine" x={r.x - 2} y={r.y - 2} width={r.w + 4} height={r.h + 4} rx={2} />)}
-      {g.sms.map((s, i) => (
-        <rect key={i} className={SM_OFF.has(i) ? 'a-gpu-off' : 'a-gpu'} x={s.x} y={s.y} width={s.w} height={s.h} rx={1.5} />
-      ))}
-      {detail && g.sms.map((s, i) => i > 0 && !SM_OFF.has(i) && <path key={'x' + i} className="a-fine" d={`M${s.x + s.w / 2} ${s.y + 2}V${s.y + s.h * 0.78}M${s.x + 1} ${s.y + s.h * 0.4}H${s.x + s.w - 1}M${s.x + 1} ${s.y + s.h * 0.8}H${s.x + s.w - 1}`} />)}
-      {detail && <SmDetail s={g.sms[0]} />}
-      {detail && [3, 20, 41, 57, 75, 96, 110, 131].map((i, k) => {
-        const s = g.sms[i];
-        return <rect key={'p' + i} className="a-pulse" x={s.x} y={s.y} width={s.w} height={s.h} rx={1.5} style={{ animationDelay: `${(k * 0.43) % 3.4}s` }} />;
-      })}
-      {g.l2.map((r, i) => <g key={i}><R r={r} c="a-mem" /><Sram r={r} step={6} vertical /></g>)}
-      <R r={g.blockSched} c="a-cpu" />
-      {g.io.map((r, i) => <R key={i} r={r} c="a-mem" />)}
-    </g>
-  );
-});
-
-export const GpuServerArt = memo(function GpuServerArt() {
-  return (
-    <g className="chipart">
-      <rect className="a-board" x={GPU_BOARD.x} y={GPU_BOARD.y} width={GPU_BOARD.w} height={GPU_BOARD.h} rx={40} />
-      {/* NVLink traces: every GPU to every NVSwitch */}
-      {GPU_PKGS.map((pk, i) => NVSWITCHES.map((sw, j) => {
-        const top = i < 4, x1 = pk.x + 300 + j * 130, y1 = top ? pk.y + pk.h : pk.y, x2 = sw.x + 80 + (i % 4) * 110, y2 = top ? sw.y : sw.y + sw.h;
-        return <path key={`${i}-${j}`} className="a-trace" d={`M${x1} ${y1}V${(y1 + y2) / 2}H${x2}V${y2}`} />;
-      }))}
-      {NICS.map((n, i) => <path key={'n' + i} className="a-trace" d={`M${GPU_PKGS[i % 4].x + 1000} ${GPU_PKGS[i].y + 350}H${n.x}`} />)}
-      {GPU_PKGS.map((pk, i) => <GpuPackageArt key={i} p={pk} detail={i === 0} />)}
-      {NVSWITCHES.map((s, i) => (
-        <g key={i}>
-          <rect className="a-sub" x={s.x} y={s.y} width={s.w} height={s.h} rx={14} />
-          <R r={sub(s, 0.25, 0.22, 0.5, 0.56)} c="a-mem" rx={4} />
-          <Sram r={sub(s, 0.3, 0.3, 0.4, 0.4)} step={10} />
-        </g>
-      ))}
-      {NICS.map((n, i) => (
-        <g key={i}>
-          <R r={n} c="a-mem-solid" rx={8} />
-          <R r={sub(n, 0.3, 0.25, 0.4, 0.5)} c="a-neutral" rx={3} />
-        </g>
-      ))}
-      <rect className="a-ghost" x={HOST_TRAY.x} y={HOST_TRAY.y} width={HOST_TRAY.w} height={HOST_TRAY.h} rx={16} />
-      {[0, 1].map(i => <R key={i} r={{ x: HOST_TRAY.x + 1500 + i * 1100, y: HOST_TRAY.y + 30, w: 500, h: 140 }} c="a-cpu" rx={8} />)}
-    </g>
-  );
-});
 
 // ------------------------------------------------------------------ CPU
 function CoreArt({ c, detail }: { c: Rect; detail: boolean }) {

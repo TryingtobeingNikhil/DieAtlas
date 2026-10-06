@@ -4,9 +4,10 @@ import { T } from '../lib/text';
 import { useLevel, useStore } from '../state/store';
 import { worldProgress } from '../lib/progress';
 import { lesson, lessonHref } from '../content/lessons';
-import { CPU_WORLD, GPU_WORLD, type Flow } from '../content/chipmaps';
+import { CPU_WORLD, type Flow } from '../content/chipmaps';
 import { CPU_PKG, GPU_PKGS, IOD_PCIE } from '../art/geometry';
-import { ArtDefs, CpuPackageArt, GpuPackageArt, Mover } from '../art/ChipArt';
+import { ArtDefs, CpuPackageArt, Mover } from '../art/ChipArt';
+import { GpuDefs, PackageFull } from '../art/GpuArt';
 import type { Level } from '../content/types';
 
 /** Live counter: writes text straight to the DOM, never re-renders React. */
@@ -76,6 +77,7 @@ const HomeArt = memo(function HomeArt({ level, cpuP, gpuP, brP, narrow }: { leve
   return (
     <svg viewBox={`0 0 ${L.vb[0]} ${L.vb[1]}`} role="img" aria-label="A CPU package and a GPU package joined by a PCIe link">
       <ArtDefs />
+      <GpuDefs />
       <g className="hchip" role="link" tabIndex={0} aria-label="The bridge: CPU vs GPU" onClick={go('#/bridge')} onKeyDown={key('#/bridge')} style={{ ['--kc' as string]: 'var(--mem)' }}>
         {lanes.map(o => <path key={o} className="a-trace" d={trace(o)} style={{ strokeWidth: 1.5 }} />)}
         {lanes.map((o, i) => <Mover key={'m' + o} f={{ kind: 'mem', r: 3.2, dur: 2.2, delay: i * 0.37, d: trace(o) }} />)}
@@ -100,9 +102,8 @@ const HomeArt = memo(function HomeArt({ level, cpuP, gpuP, brP, narrow }: { leve
 
       <g className="hchip" role="link" tabIndex={0} aria-label="Enter the GPU world" onClick={go('#/gpu')} onKeyDown={key('#/gpu')} style={{ ['--kc' as string]: 'var(--gpu)' }}>
         <rect className="hl" x={L.gpu.x - 10} y={L.gpu.y - 10} width={gpuW + 20} height={gpuH + 20} rx={16} />
-        <g transform={gt} className="chipart">
-          <GpuPackageArt p={p0} detail />
-          {scaled(GPU_WORLD.root.children![0].flows, 2.2).map((f, i) => <Mover key={i} f={f} />)}
+        <g transform={gt} className="chipart gpu-art">
+          <PackageFull p={p0} smDetail={false} />
         </g>
         <text className="hlabel" x={L.gpuLbl[0]} y={L.gpuLbl[1]}><tspan fill="var(--gpu)">● </tspan>GPU world</text>
         <MiniRing x={L.gpuLbl[0] + 172} y={L.gpuLbl[1] - 8} v={gpuP} color="var(--gpu)" />
