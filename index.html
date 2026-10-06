@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en" data-theme="dark" data-level="beginner">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Die Atlas · How CPUs and GPUs actually work</title>
+  <meta name="description" content="An explorable atlas of computer and GPU architecture: from one transistor to a multi-GPU AI server, with live animations, the real numbers and the math." />
+  <meta name="theme-color" content="#0A0F0C" />
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <script>
+    // Apply saved theme + level before first paint (no flash). URL params override (?theme=light&level=intermediate).
+    (function () {
+      var d = document.documentElement, s = {};
+      try { s = (JSON.parse(localStorage.getItem('die-atlas') || '{}').state) || {}; } catch (e) {}
+      var q = new URLSearchParams(location.search + '&' + (location.hash.split('?')[1] || ''));
+      var t = q.get('theme') || s.theme, l = q.get('level') || s.level;
+      if (t === 'light' || t === 'dark') d.dataset.theme = t;
+      if (l === 'beginner' || l === 'intermediate') d.dataset.level = l;
+    })();
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;600&family=Space+Grotesk:wght@500;600;700&display=swap" />
+</head>
+<body>
+  <div id="root"></div>
+  <script type="module" src="/src/main.tsx"></script>
+</body>
+</html>
