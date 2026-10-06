@@ -8,7 +8,8 @@
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
     "validate": "tsx scripts/validate.ts",
-    "shots": "tsx scripts/screenshots.ts"
+    "shots": "tsx scripts/screenshots.ts",
+    "perf": "tsx scripts/perf.ts"
   },
   "dependencies": {
     "katex": "^0.19.0",

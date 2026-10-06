@@ -11,6 +11,11 @@ import { SPECS } from '../src/content/specs';
 import { CACHE_LABS } from '../src/content/labs';
 import { runAll } from '../src/sim/cache';
 import type { LT, Scene } from '../src/content/types';
+import { PAGE_IDS, loadPage } from '../src/content/parts';
+import type { Cue } from '../src/content/parts/types';
+import { FIGURE_SPECS } from '../src/figures';
+import { term } from '../src/content/glossary';
+import { plain } from '../src/lib/prose';
 
 const FIRST_LOAD_BUDGET_KB = 200;
 const MAX_WORDS = 45, MAX_SENTENCE = 20;
@@ -59,6 +64,66 @@ for (const c of COMPONENTS) {
 // bridge + foundations components are drawn by the Bridge and Home screens (every one of them)
 const onAMap = (id: string) => placed.has(id) || COMPONENTS.some(c => c.id === id && (c.world === 'bridge' || c.world === 'foundations'));
 ok(`${COMPONENTS.length} components: ${placed.size} drawn on the chip maps, the rest on the Bridge/Foundations screens`);
+
+// ---------- map tooltips ----------
+section('Map tooltips (hover / ⓘ)');
+for (const c of COMPONENTS.filter(c => c.world === 'cpu' || c.world === 'gpu')) {
+  if (!c.tech || !c.friendly) fail(`${c.id}: tooltip needs a name (tech + friendly)`);
+  for (const lv of ['b', 'i'] as const) {
+    const h = typeof c.hover === 'string' ? c.hover : c.hover[lv];
+    if (!h) fail(`${c.id}: tooltip sentence missing`);
+    else if (h.length > 170) fail(`${c.id}: tooltip sentence is ${h.length} chars (max 170, ~3 lines)`);
+  }
+}
+ok('every CPU/GPU component has a name and a one-sentence tooltip of ≤ 3 lines in both levels');
+
+// ---------- component pages ----------
+section('Component pages (six sections + Go deeper)');
+const BEGINNER_MIN = 350, BEGINNER_SOFT_MAX = 550, DEEPER_MIN = 300;
+const words = (xs: string[]) => xs.map(plain).join(' ').split(/\s+/).filter(Boolean).length;
+const termsIn = (s: string) => [...s.matchAll(/\[\[(.+?)\]\]/g)].map(m => (m[1].includes('|') ? m[1].split('|')[1] : m[1]));
+const partsIn = (s: string) => [...s.matchAll(/\(\((.+?)\|(.+?)\)\)/g)].flatMap(m => m[2].split(',').map(x => x.trim()));
+for (const id of PAGE_IDS) {
+  const pg = (await loadPage(id))!;
+  const where = `page ${id}`;
+  if (pg.id !== id) fail(`${where}: id mismatch (${pg.id})`);
+  if (!compIds.has(id)) fail(`${where}: no such component`);
+  const spec = FIGURE_SPECS[pg.figure];
+  if (!spec) { fail(`${where}: unknown figure ${pg.figure}`); continue; }
+  const cue = (c: Cue | undefined, w: string) => {
+    if (!c) return;
+    c.parts?.forEach(p => { if (!spec.parts.includes(p)) fail(`${where} ${w}: figure '${pg.figure}' has no part '${p}'`); });
+    if (c.mode && !spec.modes.includes(c.mode)) fail(`${where} ${w}: figure '${pg.figure}' has no mode '${c.mode}'`);
+  };
+  cue(pg.does.cue, 'does'); pg.how.forEach((h, i) => cue(h.cue, `step ${i + 1}`)); pg.deeper.mechanism.forEach(m => cue(m.cue, m.title));
+  if (pg.how.length < 3 || pg.how.length > 5) fail(`${where}: ${pg.how.length} "how" steps (3–5)`);
+  if (pg.numbers.length < 2 || pg.numbers.length > 4) fail(`${where}: ${pg.numbers.length} key numbers (2–4)`);
+  if (pg.check.length < 1 || pg.check.length > 2) fail(`${where}: ${pg.check.length} check questions (1–2)`);
+  pg.check.forEach((q, i) => { if (q.answer < 0 || q.answer >= q.options.length) fail(`${where}: question ${i + 1} answer out of range`); if (!q.why) fail(`${where}: question ${i + 1} has no explanation`); });
+  if (pg.connected.length < 2 || pg.connected.length > 3) fail(`${where}: ${pg.connected.length} connected links (2–3)`);
+  pg.connected.forEach(x => { if (!compIds.has(x.id)) fail(`${where}: connected to unknown component ${x.id}`); });
+  if (pg.lesson && !LESSONS.some(l => l.id === pg.lesson)) fail(`${where}: unknown lesson ${pg.lesson}`);
+  if (!pg.sources.length || pg.sources.some(s => !s.title || !(s.year > 1900))) fail(`${where}: every source needs a title and year`);
+  // writing contract
+  // reading prose of the Beginner view (the quiz is interaction, counted separately)
+  const beginner = [pg.what, pg.does.text, ...pg.why, ...pg.how.map(h => h.title + '. ' + h.text), ...pg.numbers.map(n => n.value + ' ' + n.meaning), pg.realWorld];
+  const quiz = pg.check.flatMap(q => [q.q, ...q.options, q.why]);
+  const deeper = [...pg.deeper.mechanism.map(m => m.title + '. ' + m.text), pg.deeper.formula.where, pg.deeper.worked.q, ...pg.deeper.worked.steps, pg.deeper.worked.answer, ...pg.deeper.choices.map(c => c.title + '. ' + c.text)];
+  const bw = words(beginner), dw = words(deeper);
+  if (bw < BEGINNER_MIN) fail(`${where}: Beginner view is ${bw} words (minimum ${BEGINNER_MIN})`);
+  if (bw > BEGINNER_SOFT_MAX) notes.push(`${where}: Beginner view is ${bw} words (guide ~350–500)`);
+  if (dw < DEEPER_MIN) fail(`${where}: Go deeper adds ${dw} words (minimum ${DEEPER_MIN})`);
+  if (!/\d/.test(pg.why.join(' '))) fail(`${where}: "Why do we need it?" has no concrete number`);
+  if (!beginner.concat(quiz, deeper).some(t => plain(t).includes(pg.example.mustContain) || t.includes(pg.example.mustContain))) fail(`${where}: the concrete example ("${pg.example.mustContain}") isn't in the text`);
+  const all = [...beginner, ...quiz, ...deeper, ...pg.connected.map(c => c.why)];
+  for (const t of all.flatMap(termsIn)) if (!term(t)) fail(`${where}: undefined glossary term [[${t}]]`);
+  for (const p of all.flatMap(partsIn)) if (!spec.parts.includes(p)) fail(`${where}: text highlights unknown part '${p}'`);
+  const longParas = all.filter(t => plain(t).split(/(?<=[.!?])\s+(?=[A-Z(])/).length > 5).length;
+  if (longParas) notes.push(`${where}: ${longParas} paragraph(s) over 5 sentences`);
+  ok(`${id}: Beginner ${bw} words (≈ ${Math.round(bw / 200 * 10) / 10} min) + ${words(quiz)}-word quiz, Go deeper +${dw}; ${pg.how.length} steps, ${pg.numbers.length} numbers, ${pg.check.length} questions; ${new Set(all.flatMap(termsIn)).size} glossary terms; figure '${pg.figure}' cues valid`);
+}
+const pending = COMPONENTS.filter(c => (c.world === 'cpu' || c.world === 'gpu') && !PAGE_IDS.includes(c.id)).map(c => c.id);
+notes.push(`component pages written: ${PAGE_IDS.length}; still to write (batch 2): ${pending.length} — ${pending.join(', ')}`);
 
 // ---------- lessons ----------
 section('Lessons');

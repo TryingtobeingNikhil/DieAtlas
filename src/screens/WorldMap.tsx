@@ -1,12 +1,14 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { ArrowRight, FlaskConical, Maximize2, Minus, Plus, ArrowUpLeft, ZoomIn, StepForward } from 'lucide-react';
+import { ArrowRight, BookOpen, FlaskConical, Maximize2, Minus, Plus, ArrowUpLeft, ZoomIn, StepForward } from 'lucide-react';
 import { CHIP_WORLDS, index, regionFocus, compsIn, type ChipRegion, type ChipWorld } from '../content/chipmaps';
 import { component } from '../content/components';
 import { lessonsFor, lessonHref, lessonsInWorld } from '../content/lessons';
-import { type Rect, union, GPU_MM_PER_UNIT, CPU_PKG, SM0 } from '../art/geometry';
-import { ArtDefs, CpuBoardArt, Mover } from '../art/ChipArt';
-import { GpuDefs, GpuWorldArt, HbmSideView, type Lod } from '../art/GpuArt';
-import { SignalLayer, gpuPackageScenario, smScenario, type Scenario } from '../art/signals';
+import { type Rect, union, CPU_PKG, GEN_CU0 } from '../art/geometry';
+import { Mover } from '../art/ChipArt';
+import { GpuDefs, type Lod } from '../art/GpuArt';
+import { CpuDefs, GenCpuBoardArt, GenGpuWorldArt } from '../art/GenericArt';
+import { SignalLayer, gpuPackageScenario, genericGpuGeo, GENERIC_GPU_TIMING, smScenario, cpuDieScenario, type Scenario } from '../art/signals';
+import { hasPage, pageHref } from '../content/parts';
 import { T, Glyph, pick, GLYPH } from '../lib/text';
 import { useLevel, useStore } from '../state/store';
 import { useRoute, replaceQuery } from '../lib/router';
@@ -17,8 +19,9 @@ interface TF { x: number; y: number; k: number }
 const clamp = (v: number, a: number, b: number) => Math.min(b, Math.max(a, v));
 const kc = (k: Kind) => (k === 'neutral' ? 'var(--text-2)' : `var(--${k})`);
 const CARD_W = 340;
-/** AM5 package is 40 mm across, drawn 600 units wide. */
+/** Generic desktop package ≈ 40 mm across (drawn 600 units wide); generic big GPU die ≈ 24.5 mm (≈ 600 mm², drawn 420 wide). */
 const CPU_MM_PER_UNIT = 40 / CPU_PKG.w;
+const GPU_MM_PER_UNIT = 24.5 / 420;
 
 /** Screen area for the drawing: leaves room for callouts on both sides and for the docked card. */
 function fitArea(el: HTMLElement) {
@@ -48,12 +51,15 @@ export default function WorldMapScreen({ world }: { world: 'cpu' | 'gpu' }) {
   });
   const [selId, setSelId] = useState<string | null>(() => { const s = q0.get('sel'); return s && byId.has(s) ? s : null; });
   const [hover, setHover] = useState<string | null>(null);
+  const [pinned, setPinned] = useState<string | null>(null);   // tip opened with ⓘ (touch, keyboard)
+  const tipId = hover ?? pinned;
+  const tipIdRef = useRef(tipId); tipIdRef.current = tipId;
 
   const focus = byId.get(focusId)!;
   const kids = focus.children ?? [];
   const path: ChipRegion[] = [];
   for (let r: ChipRegion | null | undefined = focus; r; r = parentOf.get(r.id)) path.unshift(r);
-  const lod: Lod = focusId === 'server' ? 'server' : focusId === 'sms' ? 'sm' : 'pkg';
+  const lod: Lod = focusId === 'server' ? 'server' : focusId === 'cu' ? 'sm' : 'pkg';
 
   // ---------------- refs: everything per-frame is written straight to the DOM ----------------
   const box = useRef<HTMLDivElement>(null);
@@ -87,7 +93,7 @@ export default function WorldMapScreen({ world }: { world: 'cpu' | 'gpu' }) {
       const sx = t.x + rr.x * t.k, sy = t.y + rr.y * t.k, sw = rr.w * t.k, sh = rr.h * t.k;
       const side: 'L' | 'R' = sx + sw / 2 < F.x + F.w / 2 ? 'L' : 'R';
       const sz = sizes.current.get(r.id) ?? { w: 140, h: 34 };
-      return { r, side, ax: side === 'L' ? sx : sx + sw, ay: sy + sh / 2, ...sz, top: 0 };
+      return { r, side, ax: side === 'L' ? sx : sx + sw, ay: sy + sh / 2, ...sz, top: 0, lx: 0 };
     });
     for (const side of ['L', 'R'] as const) {
       const col = items.filter(i => i.side === side).sort((p, q) => p.ay - q.ay);
@@ -102,13 +108,29 @@ export default function WorldMapScreen({ world }: { world: 'cpu' | 'gpu' }) {
       const ly = it.top + it.h / 2;
       const edge = it.side === 'L' ? Math.min(F.x - 14, it.ax - 6) : Math.max(F.x + F.w + 14, it.ax + 6);
       // label column: 40 px beyond the drawing, but never off the canvas
-      const lx = it.side === 'L' ? Math.max(8 + it.w + 4, edge - 40) : Math.min(el.clientWidth - 8 - it.w - 4, edge + 40);
+      const lx = it.side === 'L' ? Math.max(8 + it.w + 4, edge - 40) : Math.min(el.clientWidth - (innerWidth > 900 ? CARD_W + 32 : 0) - 8 - it.w - 4, edge + 40);
       const gap = Math.abs(edge - lx) - 6, dy = ly - it.ay, s = it.side === 'L' ? -1 : 1;
       const knee = Math.min(Math.abs(dy), gap);
       const pts = [[it.ax, it.ay], [edge, it.ay], [edge, ly - Math.sign(dy) * knee], [edge + s * knee, ly], [lx, ly]];
       lead.setAttribute('d', 'M' + pts.map(p => `${p[0].toFixed(1)} ${p[1].toFixed(1)}`).join('L'));
       dot.setAttribute('cx', it.ax.toFixed(1)); dot.setAttribute('cy', it.ay.toFixed(1));
-      lab.style.transform = `translate(${(it.side === 'L' ? lx - it.w - 4 : lx + 4).toFixed(1)}px, ${it.top.toFixed(1)}px)`;
+      it.lx = it.side === 'L' ? lx - it.w - 4 : lx + 4;
+      lab.style.transform = `translate(${it.lx.toFixed(1)}px, ${it.top.toFixed(1)}px)`;
+    }
+    // the tooltip sits beside its callout, in the margin, and never on top of the part itself
+    const tid = tipIdRef.current, tipEl = tipRef.current, it = tid ? items.find(i => i.r.id === tid) : undefined;
+    if (it && tipEl) {
+      const tw = tipEl.offsetWidth, th = tipEl.offsetHeight, maxX = el.clientWidth - (innerWidth > 900 ? CARD_W + 32 : 0) - tw - 8;
+      const x = clamp(it.side === 'L' ? it.lx : it.lx + it.w - tw, 8, Math.max(8, maxX));
+      const Ps = it.r.rects.map(q => ({ x: t.x + q.x * t.k, y: t.y + q.y * t.k, w: q.w * t.k, h: q.h * t.k }));
+      const hits = (hx: number, y: number) => Ps.reduce((sum, P) => sum + Math.max(0, Math.min(hx + tw, P.x + P.w) - Math.max(hx, P.x)) * Math.max(0, Math.min(y + th, P.y + P.h) - Math.max(y, P.y)), 0);
+      // try below / above the callout, then the same pulled further into the margin; least overlap wins
+      const xIn = it.side === 'L' ? Math.max(8, Math.min(...Ps.map(P => P.x)) - tw - 6) : Math.min(Math.max(8, maxX), Math.max(...Ps.map(P => P.x + P.w)) + 6);
+      const ys = [it.top + it.h + 6, it.top - th - 6].map(y => clamp(y, 8, el.clientHeight - th - 8));
+      const cands = [...ys.map(y => [x, y]), ...ys.map(y => [xIn, y])];
+      let best = cands[0], bestHit = Infinity;
+      for (const c of cands) { const h = hits(c[0], c[1]); if (h < bestHit - 1) { best = c; bestHit = h; } }
+      tipEl.style.transform = `translate(${best[0].toFixed(1)}px, ${best[1].toFixed(1)}px)`;
     }
   }, []);
 
@@ -212,7 +234,7 @@ export default function WorldMapScreen({ world }: { world: 'cpu' | 'gpu' }) {
     sizes.current.clear();
     callRefs.current.forEach((el, id) => sizes.current.set(id, { w: el.offsetWidth, h: el.offsetHeight }));
     apply();
-  }, [focusId, level, apply, selId]);
+  }, [focusId, level, apply, selId, tipId]);
 
   // signal layer: one canvas, one clock
   useEffect(() => {
@@ -220,7 +242,8 @@ export default function WorldMapScreen({ world }: { world: 'cpu' | 'gpu' }) {
     signals.current = new SignalLayer(c, () => tf.current, null, clockRef.current);
     return () => { signals.current?.destroy(); signals.current = null; };
   }, []);
-  const scenario = useMemo<Scenario | null>(() => (world !== 'gpu' ? null : focusId === 'pkg' ? gpuPackageScenario() : focusId === 'sms' ? smScenario(SM0) : null), [world, focusId]);
+  const scenario = useMemo<Scenario | null>(() => (world === 'cpu' ? (focusId === 'pkg' ? cpuDieScenario() : null)
+    : focusId === 'pkg' ? gpuPackageScenario(genericGpuGeo(), GENERIC_GPU_TIMING) : focusId === 'cu' ? smScenario(GEN_CU0, true) : null), [world, focusId]);
   useEffect(() => { signals.current?.setScenario(scenario); }, [scenario]);
 
   const goFocus = useCallback((r: ChipRegion, animate = true) => {
@@ -268,12 +291,7 @@ export default function WorldMapScreen({ world }: { world: 'cpu' | 'gpu' }) {
       if (pts.size === 2) { const [a, b] = [...pts.values()]; pinch = Math.hypot(a.x - b.x, a.y - b.y); }
     };
     const onMove = (e: PointerEvent) => {
-      if (!pts.has(e.pointerId)) {
-        const t = tipRef.current; if (!t) return;
-        const r = el.getBoundingClientRect();
-        t.style.transform = `translate(${clamp(e.clientX - r.left + 14, 8, r.width - t.offsetWidth - 8)}px, ${clamp(e.clientY - r.top + 18, 8, r.height - t.offsetHeight - 8)}px)`;
-        return;
-      }
+      if (!pts.has(e.pointerId)) return;
       pts.set(e.pointerId, local(e));
       if (pts.size === 2 && pinch) {
         const [a, b] = [...pts.values()], d = Math.hypot(a.x - b.x, a.y - b.y);
@@ -303,13 +321,15 @@ export default function WorldMapScreen({ world }: { world: 'cpu' | 'gpu' }) {
     replaceQuery(q);
   }, [focusId, selId]);
   useEffect(() => {
-    const k = (e: KeyboardEvent) => { if (e.key === 'Escape') { if (selId) setSelId(null); else goUp(); } };
+    const k = (e: KeyboardEvent) => { if (e.key === 'Escape') { if (pinned) setPinned(null); else if (selId) setSelId(null); else goUp(); } };
     addEventListener('keydown', k); return () => removeEventListener('keydown', k);
-  }, [selId, goUp]);
+  }, [selId, goUp, pinned]);
+  useEffect(() => setPinned(null), [focusId]);
 
   const click = (r: ChipRegion) => {
     if (dragged.current) return;
     if (r.children) goFocus(r);
+    else if (r.comp && hasPage(r.comp)) location.hash = pageHref(r.comp);
     else setSelId(s => (s === r.id ? null : r.id));
   };
   const nudge = (f: number) => {
@@ -319,7 +339,7 @@ export default function WorldMapScreen({ world }: { world: 'cpu' | 'gpu' }) {
 
   const shown = selId ? byId.get(selId)! : focus;
   const ls = lessonsInWorld(world), prog = { d: ls.filter(l => done[l.id]).length, t: ls.length };
-  const hovR = hover ? byId.get(hover) : null;
+  const tipR = tipId ? byId.get(tipId) : null;
   const parent = parentOf.get(focusId);
   const fr = regionFocus(focus);
   const reduced = typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -328,10 +348,10 @@ export default function WorldMapScreen({ world }: { world: 'cpu' | 'gpu' }) {
     <div className="chipmap">
       <div className="cm-canvas" ref={box}>
         <svg ref={artRef} className="cm-art" role="group" aria-label={`${W.title}: ${pick(focus.label, level)}`}>
-          <ArtDefs />
-          {world === 'gpu' && <GpuDefs />}
+          <GpuDefs />
+          {world === 'cpu' && <CpuDefs />}
           <g ref={g}>
-            {world === 'gpu' ? <GpuWorldArt lod={lod} /> : <CpuBoardArt />}
+            {world === 'gpu' ? <GenGpuWorldArt lod={lod} /> : <GenCpuBoardArt />}
             {/* brightness hierarchy: focus crisp, neighbours ~50%, everything else ~25% */}
             {parent && <path className="dim dim-near" d={holeD(regionFocus(parent), fr)} fillRule="evenodd" onClick={goUp} />}
             {parent && <path className="dim dim-far" d={holeD(null, regionFocus(parent))} fillRule="evenodd" onClick={goUp} />}
@@ -340,7 +360,8 @@ export default function WorldMapScreen({ world }: { world: 'cpu' | 'gpu' }) {
                 <g key={r.id} style={{ ['--kc' as string]: kc(r.kind) }}>
                   {r.rects.map((rc, i) => (
                     <rect key={i} className={'rg' + (selId === r.id ? ' sel' : '') + (hover === r.id ? ' hov' : '')} x={rc.x} y={rc.y} width={rc.w} height={rc.h}
-                      tabIndex={i === 0 ? 0 : -1} role="button" aria-label={pick(r.label, level)}
+                      tabIndex={i === 0 ? 0 : -1} role="button" aria-label={pick(r.label, level)} aria-describedby={tipId === r.id ? 'cm-tip' : undefined}
+                      onFocus={() => setPinned(r.id)} onBlur={() => setPinned(p => (p === r.id ? null : p))}
                       onClick={() => click(r)} onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); click(r); } }}
                       onPointerEnter={() => setHover(r.id)} onPointerLeave={() => setHover(h => (h === r.id ? null : h))} />
                   ))}
@@ -366,18 +387,22 @@ export default function WorldMapScreen({ world }: { world: 'cpu' | 'gpu' }) {
           {kids.map(r => {
             const c = r.comp ? component(r.comp) : undefined;
             const b = pick(r.label, 'beginner'), i = pick(r.label, 'intermediate');
+            const on = tipId === r.id || selId === r.id;
             return (
-              <button key={r.id + level} ref={el => { if (el) callRefs.current.set(r.id, el); else callRefs.current.delete(r.id); }}
-                className={'callout lvl' + (selId === r.id ? ' sel' : '') + (hover === r.id ? ' hov' : '') + (r.children ? ' into' : '')} style={{ ['--kc' as string]: kc(r.kind) }}
-                onClick={() => click(r)} onPointerEnter={() => setHover(r.id)} onPointerLeave={() => setHover(null)} tabIndex={-1}>
-                <span className="c1"><span className="g">{GLYPH[r.kind]}</span>{level === 'beginner' ? b : i}{r.children ? ' ⤢' : ''}</span>
-                <span className="c2">{level === 'beginner' ? (i !== b ? i : c?.tech ?? '') : b}</span>
-                {level === 'intermediate' && c?.num && <span className="c3">{c.num}</span>}
-              </button>
+              <div key={r.id + level} ref={el => { if (el) callRefs.current.set(r.id, el); else callRefs.current.delete(r.id); }}
+                data-id={r.id} className={'callout lvl' + (selId === r.id ? ' sel' : '') + (on ? ' hov' : '') + (r.children ? ' into' : '')} style={{ ['--kc' as string]: kc(r.kind) }}
+                onPointerEnter={() => setHover(r.id)} onPointerLeave={() => setHover(null)}>
+                <button className="c-main" onClick={() => click(r)} tabIndex={-1} aria-describedby={tipId === r.id ? 'cm-tip' : undefined}>
+                  <span className="c1"><span className="g">{GLYPH[r.kind]}</span>{level === 'beginner' ? b : i}{r.children ? ' ⤢' : ''}</span>
+                  <span className="c2">{level === 'beginner' ? (i !== b ? i : c?.tech ?? '') : c?.key?.value ?? b}</span>
+                </button>
+                <button className="c-info" aria-label={`About ${level === 'beginner' ? b : i}`} aria-expanded={pinned === r.id}
+                  onClick={e => { e.stopPropagation(); setPinned(p => (p === r.id ? null : r.id)); }}>ⓘ</button>
+              </div>
             );
           })}
         </div>
-        <div ref={tipRef} className={'tip' + (hovR ? ' on' : '')}>{hovR && <Tip r={hovR} level={level} />}</div>
+        <div ref={tipRef} id="cm-tip" role="tooltip" className={'tip' + (tipR ? ' on' : '') + (pinned && !hover ? ' pinned' : '')}>{tipR && <Tip r={tipR} level={level} />}</div>
 
         <div className="cm-foot">
           <div className="cm-ctl">
@@ -385,7 +410,7 @@ export default function WorldMapScreen({ world }: { world: 'cpu' | 'gpu' }) {
             <button className="btn btn-sm btn-ghost" aria-label="Zoom out a little" onClick={() => nudge(1 / 1.3)}><Minus size={14} /></button>
             <button className="btn btn-sm btn-ghost" aria-label="Zoom in a little" onClick={() => nudge(1.3)}><Plus size={14} /></button>
             <button className="btn btn-sm btn-ghost" onClick={() => { touched.current = false; flyTo(focus); }}><Maximize2 size={13} /> Fit</button>
-            {reduced && scenario && <button className="btn btn-sm" onClick={() => signals.current?.step(focusId === 'sms' ? 1 : 20)}><StepForward size={13} /> Step</button>}
+            {reduced && scenario && <button className="btn btn-sm" onClick={() => signals.current?.step(focusId === 'cu' ? 1 : 20)}><StepForward size={13} /> Step</button>}
           </div>
           <svg className="scalebar" width="160" height="30" aria-label="Scale bar">
             <path ref={scaleLine} />
@@ -423,19 +448,18 @@ export default function WorldMapScreen({ world }: { world: 'cpu' | 'gpu' }) {
 
 function Tip({ r, level }: { r: ChipRegion; level: Level }) {
   const c = r.comp ? component(r.comp) : undefined;
+  const page = r.comp ? hasPage(r.comp) : false;
+  const name = level === 'beginner' ? pick(r.label, 'beginner') : c?.tech ?? pick(r.label, 'intermediate');
+  const sub = level === 'beginner' ? c?.tech : c?.friendly;
   return (
     <>
-      <b>{level === 'beginner' ? pick(r.label, 'beginner') : pick(r.label, 'intermediate')}</b>
-      {level === 'intermediate' && c?.num && <span className="mono muted" style={{ fontSize: 11.5 }}> · {c.num}</span>}
+      <b>{name}</b>{sub && sub !== name && <span className="tip-sub"> · {sub}</span>}
       <div className="text2">{c ? pick(c.hover, level) : r.desc ? pick(r.desc, level) : ''}</div>
-      {r.id === 'hbm' && (
-        <div style={{ marginTop: 8 }}>
-          <div className="eyebrow" style={{ marginBottom: 4 }}>Side view · one stack</div>
-          <HbmSideView beginner={level === 'beginner'} />
-          {level === 'intermediate' && <div className="mono muted" style={{ fontSize: 11 }}>8-high · 16 GB per stack (80 GB ÷ 5)</div>}
-        </div>
-      )}
-      {r.children && <div className="muted" style={{ fontSize: 12, marginTop: 4 }}>Click to look inside</div>}
+      <div className="tip-cta">
+        {r.children ? 'Click to look inside' : page ? 'Click to learn more' : 'Click for a summary'}
+        {r.children && page && <> · <a href={pageHref(r.comp!)}>learn more →</a></>}
+        {!r.children && page && <> <a href={pageHref(r.comp!)} aria-label={`Learn more about ${name}`}>→</a></>}
+      </div>
     </>
   );
 }
@@ -449,7 +473,7 @@ function RegionCard({ r, isFocus, world, onInto, onPick }: { r: ChipRegion; isFo
   const ordered = level === 'beginner' ? [...all].sort((a, b) => (a.level === b.level ? 0 : a.level === 'beginner' ? -1 : 1)) : all;
   const ready = ordered.filter(l => l.status === 'ready');
   const soon = ordered.length - ready.length;
-  const specs = r.specs ?? c?.specs;
+  const page = c && hasPage(c.id);
   const goto = r.comp === 'cpu.gpulink' ? { href: '#/gpu', label: 'Enter the GPU world' } : r.comp === 'gpu.host' ? { href: '#/cpu', label: 'Enter the CPU world' } : null;
   const title = inside ? pick(inside.label, level) : c ? (level === 'beginner' ? c.friendly : c.tech) : pick(r.label, level);
   const sub = !inside && c ? (level === 'beginner' ? c.tech : c.friendly) : null;
@@ -462,11 +486,13 @@ function RegionCard({ r, isFocus, world, onInto, onPick }: { r: ChipRegion; isFo
       </div>
       <p className="teaser"><T v={inside ? inside.desc : c ? c.teaser : r.desc ?? world.reference} /></p>
 
-      {level === 'intermediate' && specs && (
+      {c?.key && !inside && (
         <table className="kv">
-          <tbody>{specs.map(([k, v]) => <tr key={k}><th>{k}</th><td>{v}</td></tr>)}</tbody>
+          <tbody><tr><th>typical</th><td>{c.key.value}{c.key.scope && <div className="muted" style={{ fontSize: 11 }}>{c.key.scope}</div>}</td></tr></tbody>
         </table>
       )}
+      {page && <div><a className="btn btn-primary" href={pageHref(c.id)}><BookOpen size={15} /> Learn about the {/^[A-Z][A-Z0-9]/.test(c.tech) ? c.tech : c.tech.charAt(0).toLowerCase() + c.tech.slice(1)} <ArrowRight size={15} /></a></div>}
+      {c && !page && !r.children && <p className="soonline">Full page for this part coming soon.</p>}
 
       {r.children && (isFocus ? (
         <div>
@@ -498,7 +524,7 @@ function RegionCard({ r, isFocus, world, onInto, onPick }: { r: ChipRegion; isFo
       {soon > 0 && <p className="soonline">+{soon} more lesson{soon > 1 ? 's' : ''} coming</p>}
 
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 'auto' }}>
-        {ready[0] && <a className="btn btn-primary" href={lessonHref(ready[0])}>Start lesson <ArrowRight size={15} /></a>}
+        {ready[0] && <a className={'btn ' + (page ? 'btn-sm' : 'btn-primary')} href={lessonHref(ready[0])}>Start lesson <ArrowRight size={15} /></a>}
         {c?.sandbox && <a className="btn btn-sm btn-ghost" href={c.sandbox.href}><FlaskConical size={14} /> {c.sandbox.label}</a>}
         {goto && <a className="btn btn-sm" href={goto.href}>{goto.label} <ArrowRight size={14} /></a>}
       </div>

@@ -12,25 +12,34 @@ export type Kind = 'gpu' | 'cpu' | 'mem' | 'math' | 'err' | 'neutral';
 export type World = 'foundations' | 'cpu' | 'gpu' | 'bridge';
 
 // ---------- map components ----------
+export interface VendorNames { nvidia?: string; amd?: string; intel?: string; apple?: string; arm?: string }
+/** A number shown to learners: either sourced (profile) or a typical range with its scope (generic). */
+export interface KeyNumber { value: string; scope?: string; src?: string }
+
 export interface MapComponent {
   id: string;
   world: World;
-  zone: string;
   kind: Kind;
   /** Technical name (shown first in Intermediate). */
   tech: string;
   /** Plain-language name (shown first in Beginner). */
   friendly: string;
-  /** One key number for Intermediate, e.g. "32 KB · 8-way". Must come from specs. */
-  num?: string;
-  /** Datasheet key–value rows (Intermediate only). */
-  specs?: [string, string][];
   /** Hover one-liner. */
   hover: LT;
-  /** Card teaser. */
+  /** Tiny analogy for Beginner tooltips. */
+  analogy?: string;
+  /** One key number for Intermediate tooltips: a typical range + scope in generic mode. */
+  key?: KeyNumber;
+  /** Quick look: why it matters, one sentence. */
+  why?: string;
+  /** Card / quick-look teaser. */
   teaser: LT;
-  /** Optional sandbox link. */
+  vendor?: VendorNames;
+  /** Dossier title when it differs from the map name (e.g. "Cache coherence (MESI/MOESI)"). */
+  dossierTitle?: string;
   sandbox?: { label: string; href: string };
+  /** Legacy: zone of the old flat maps (unused by chip maps). */
+  zone?: string;
 }
 
 export interface Zone {

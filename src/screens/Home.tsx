@@ -4,10 +4,10 @@ import { T } from '../lib/text';
 import { useLevel, useStore } from '../state/store';
 import { worldProgress } from '../lib/progress';
 import { lesson, lessonHref } from '../content/lessons';
-import { CPU_WORLD, type Flow } from '../content/chipmaps';
-import { CPU_PKG, GPU_PKGS, IOD_PCIE } from '../art/geometry';
-import { ArtDefs, CpuPackageArt, Mover } from '../art/ChipArt';
-import { GpuDefs, PackageFull } from '../art/GpuArt';
+import { CPU_PKG, GPU_PKGS, GEN_CPU } from '../art/geometry';
+import { Mover } from '../art/ChipArt';
+import { GpuDefs } from '../art/GpuArt';
+import { CpuDefs, GenCpuDieArt, GenGpuPackageFull } from '../art/GenericArt';
 import type { Level } from '../content/types';
 
 /** Live counter: writes text straight to the DOM, never re-renders React. */
@@ -50,8 +50,6 @@ function MiniRing({ x, y, v, color }: { x: number; y: number; v: number; color: 
   );
 }
 
-const scaled = (fs: Flow[] | undefined, m: number) => (fs ?? []).map(f => ({ ...f, r: f.r * m }));
-
 // Two compositions: side by side (wide) and stacked (phones).
 const LAYOUT = {
   wide: { vb: [1400, 640], cpu: { x: 70, y: 70, s: 0.8 }, gpu: { x: 800, y: 110, s: 0.56 }, cpuLbl: [70, 590], gpuLbl: [800, 560] },
@@ -64,11 +62,13 @@ const HomeArt = memo(function HomeArt({ level, cpuP, gpuP, brP, narrow }: { leve
   const ct = `translate(${L.cpu.x - CPU_PKG.x * L.cpu.s} ${L.cpu.y - CPU_PKG.y * L.cpu.s}) scale(${L.cpu.s})`;
   const gt = `translate(${L.gpu.x - p0.x * L.gpu.s} ${L.gpu.y - p0.y * L.gpu.s}) scale(${L.gpu.s})`;
   // the PCIe "bridge": from the CPU's PCIe controller to the GPU package edge
-  const ax = L.cpu.x + (IOD_PCIE.x + IOD_PCIE.w - CPU_PKG.x) * L.cpu.s, ay = L.cpu.y + (IOD_PCIE.y + IOD_PCIE.h / 2 - CPU_PKG.y) * L.cpu.s;
+  // the PCIe lanes leave the package edge level with the die's PCIe block
+  const io = GEN_CPU.io;
+  const ax = L.cpu.x + CPU_PKG.w * L.cpu.s, ay = L.cpu.y + (io.y + io.h / 2 - CPU_PKG.y) * L.cpu.s;
   const bx = narrow ? L.gpu.x + 500 * L.gpu.s : L.gpu.x, by = narrow ? L.gpu.y : L.gpu.y + 350 * L.gpu.s;
   const lanes = [-10, -5, 0, 5, 10];
   const trace = (o: number) => (narrow
-    ? `M${ax} ${ay + o} H${ax + 60 + o} V${(ay + by) / 2 + o} H${bx + o} V${by}`
+    ? `M${ax} ${ay + o} H${ax + 30 + o} V${(ay + by) / 2 + o} H${bx + o} V${by}`
     : `M${ax} ${ay + o} H${(ax + bx) / 2 + o} V${by + o} H${bx}`);
   const mid = narrow ? { x: 290, y: (ay + by) / 2 + 40 } : { x: (ax + bx) / 2, y: Math.min(ay, by) - 46 };
   const go = (h: string) => () => { location.hash = h; };
@@ -76,8 +76,8 @@ const HomeArt = memo(function HomeArt({ level, cpuP, gpuP, brP, narrow }: { leve
   const cpuW = CPU_PKG.w * L.cpu.s, gpuW = p0.w * L.gpu.s, gpuH = p0.h * L.gpu.s;
   return (
     <svg viewBox={`0 0 ${L.vb[0]} ${L.vb[1]}`} role="img" aria-label="A CPU package and a GPU package joined by a PCIe link">
-      <ArtDefs />
       <GpuDefs />
+      <CpuDefs />
       <g className="hchip" role="link" tabIndex={0} aria-label="The bridge: CPU vs GPU" onClick={go('#/bridge')} onKeyDown={key('#/bridge')} style={{ ['--kc' as string]: 'var(--mem)' }}>
         {lanes.map(o => <path key={o} className="a-trace" d={trace(o)} style={{ strokeWidth: 1.5 }} />)}
         {lanes.map((o, i) => <Mover key={'m' + o} f={{ kind: 'mem', r: 3.2, dur: 2.2, delay: i * 0.37, d: trace(o) }} />)}
@@ -89,26 +89,26 @@ const HomeArt = memo(function HomeArt({ level, cpuP, gpuP, brP, narrow }: { leve
 
       <g className="hchip" role="link" tabIndex={0} aria-label="Enter the CPU world" onClick={go('#/cpu')} onKeyDown={key('#/cpu')} style={{ ['--kc' as string]: 'var(--cpu)' }}>
         <rect className="hl" x={L.cpu.x - 10} y={L.cpu.y - 10} width={cpuW + 20} height={cpuW + 20} rx={16} />
-        <g transform={ct} className="chipart">
-          <CpuPackageArt />
-          {scaled(CPU_WORLD.root.children![0].flows, 1.4).map((f, i) => <Mover key={i} f={f} />)}
+        <g transform={ct} className="chipart kit">
+          <rect className="substrate" x={CPU_PKG.x} y={CPU_PKG.y} width={CPU_PKG.w} height={CPU_PKG.h} rx={4} />
+          <GenCpuDieArt />
         </g>
         <text className="hlabel" x={L.cpuLbl[0]} y={L.cpuLbl[1]}><tspan fill="var(--cpu)">◆ </tspan>CPU world</text>
         <MiniRing x={L.cpuLbl[0] + 170} y={L.cpuLbl[1] - 8} v={cpuP} color="var(--cpu)" />
         <text className={level === 'beginner' ? 'hsub' : 'hsubm'} x={L.cpuLbl[0] + (narrow ? 0 : 196)} y={L.cpuLbl[1] + (narrow ? 24 : -2)}>
-          {level === 'beginner' ? 'A few big, clever cores' : '7950X · 16 cores · 2 × 32 MB L3'}
+          {level === 'beginner' ? 'A few big, clever cores' : '8 cores · ring · shared L3 · DDR5'}
         </text>
       </g>
 
       <g className="hchip" role="link" tabIndex={0} aria-label="Enter the GPU world" onClick={go('#/gpu')} onKeyDown={key('#/gpu')} style={{ ['--kc' as string]: 'var(--gpu)' }}>
         <rect className="hl" x={L.gpu.x - 10} y={L.gpu.y - 10} width={gpuW + 20} height={gpuH + 20} rx={16} />
-        <g transform={gt} className="chipart gpu-art">
-          <PackageFull p={p0} smDetail={false} />
+        <g transform={gt} className="chipart kit">
+          <GenGpuPackageFull p={p0} cuDetail={false} />
         </g>
         <text className="hlabel" x={L.gpuLbl[0]} y={L.gpuLbl[1]}><tspan fill="var(--gpu)">● </tspan>GPU world</text>
         <MiniRing x={L.gpuLbl[0] + 172} y={L.gpuLbl[1] - 8} v={gpuP} color="var(--gpu)" />
         <text className={level === 'beginner' ? 'hsub' : 'hsubm'} x={L.gpuLbl[0] + (narrow ? 0 : 198)} y={L.gpuLbl[1] + (narrow ? 24 : -2)}>
-          {level === 'beginner' ? 'Thousands of small workers' : 'H100 SXM5 · 132 SMs · 3.35 TB/s'}
+          {level === 'beginner' ? 'Thousands of small workers' : '4 clusters × 8 compute units · GDDR or HBM'}
         </text>
       </g>
     </svg>

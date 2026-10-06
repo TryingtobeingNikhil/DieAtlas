@@ -10,6 +10,7 @@ const BridgeScreen = lazy(() => import('./screens/Bridge'));
 const BridgeRace = lazy(() => import('./screens/BridgeRace'));
 const CacheLab = lazy(() => import('./screens/CacheLab'));
 const Foundations = lazy(() => import('./screens/Foundations'));
+const PartScreen = lazy(() => import('./screens/Part'));
 
 function Wordmark() {
   return (
@@ -63,8 +64,8 @@ function LevelToast() {
 }
 
 const NAV = [
-  { href: '#/cpu', match: '/cpu', label: 'CPU world', icon: Cpu },
-  { href: '#/gpu', match: '/gpu', label: 'GPU world', icon: Microchip },
+  { href: '#/cpu', match: '/cpu', label: 'CPU', icon: Cpu },
+  { href: '#/gpu', match: '/gpu', label: 'GPU', icon: Microchip },
   { href: '#/bridge', match: '/bridge', label: 'The bridge', icon: Waypoints },
   { href: '#/lab/cache', match: '/lab', label: 'Dielab', icon: FlaskConical },
 ];
@@ -78,6 +79,7 @@ export function App() {
   if (p === '/') screen = <Home />;
   else if (p === '/cpu' || p === '/gpu') screen = <WorldMapScreen world={p.slice(1) as 'cpu' | 'gpu'} key={p} />;
   else if (route.parts[0] === 'lesson' && route.parts[1]) screen = <LessonScreen id={route.parts[1]} key={route.parts[1]} />;
+  else if (route.parts[0] === 'part' && route.parts[1]) screen = <PartScreen id={route.parts[1]} key={route.parts[1]} />;
   else if (p === '/bridge') screen = <BridgeScreen />;
   else if (p === '/bridge/why') screen = <BridgeRace />;
   else if (p === '/lab/cache' || p === '/lab') screen = <CacheLab />;

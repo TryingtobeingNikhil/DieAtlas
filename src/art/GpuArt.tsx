@@ -13,7 +13,7 @@ export type Lod = 'server' | 'pkg' | 'sm';
 
 // ---------------------------------------------------------------- patterns
 /** Std-cell rows: horizontal rails with irregular cell boundaries. pitch = row height. */
-function StdCell({ id, color, pitch, sw = 0.09, op = 0.32 }: { id: string; color: string; pitch: number; sw?: number; op?: number }) {
+export function StdCell({ id, color, pitch, sw = 0.09, op = 0.32 }: { id: string; color: string; pitch: number; sw?: number; op?: number }) {
   const W = pitch * 13, rows = [[1.1, 2.8, 3.6, 5.6, 7.2, 9.4, 10.8, 12.2], [0.6, 2.2, 4.4, 5.3, 6.7, 8.9, 11.6], [1.7, 3.3, 3.9, 6.1, 7.8, 8.6, 11.1, 12.7], [0.8, 2.8, 5, 6.9, 10, 10.6, 12.4]];
   let d = '';
   rows.forEach((xs, r) => {
@@ -27,7 +27,7 @@ function StdCell({ id, color, pitch, sw = 0.09, op = 0.32 }: { id: string; color
   );
 }
 /** SRAM bitcells: a fine square grid. */
-function Bitcells({ id, color, pitch, op = 0.3, sw = 0.12 }: { id: string; color: string; pitch: number; op?: number; sw?: number }) {
+export function Bitcells({ id, color, pitch, op = 0.3, sw = 0.12 }: { id: string; color: string; pitch: number; op?: number; sw?: number }) {
   return (
     <pattern id={id} width={pitch} height={pitch} patternUnits="userSpaceOnUse">
       <path d={`M0 0H${pitch}M0 0V${pitch}`} fill="none" stroke={color} strokeOpacity={op} strokeWidth={pitch * sw} />
@@ -69,7 +69,7 @@ export function GpuDefs() {
   );
 }
 
-const Rc = ({ r, c, rx = 0.5, style }: { r: Rect; c: string; rx?: number; style?: React.CSSProperties }) => (
+export const Rc = ({ r, c, rx = 0.5, style }: { r: Rect; c: string; rx?: number; style?: React.CSSProperties }) => (
   <rect className={c} x={r.x} y={r.y} width={r.w} height={r.h} rx={rx} style={style} />
 );
 
@@ -91,7 +91,7 @@ function Hbm({ r, off }: { r: Rect; off: boolean }) {
 }
 
 /** Seal ring + bond-pad ring around a die. */
-function DieEdge({ d, pitch = 7 }: { d: Rect; pitch?: number }) {
+export function DieEdge({ d, pitch = 7 }: { d: Rect; pitch?: number }) {
   const pads: Rect[] = [];
   const s = 2.2, inset = 4.5;
   for (let x = d.x + 12; x < d.x + d.w - 12; x += pitch) { pads.push({ x, y: d.y + inset, w: s, h: s }); pads.push({ x, y: d.y + d.h - inset - s, w: s, h: s }); }
@@ -128,7 +128,7 @@ function SmLiteSymbol({ w, h }: { w: number; h: number }) {
 }
 
 /** One SM in full detail (only drawn when you're inside it). */
-export function SmDetail({ s }: { s: Rect }) {
+export function SmDetail({ s, tma = true }: { s: Rect; tma?: boolean }) {
   const k = smInside(s);
   return (
     <g className="sm-detail">
@@ -153,7 +153,7 @@ export function SmDetail({ s }: { s: Rect }) {
       {/* L1 / shared memory: 32 banks of 4 bytes */}
       {cells(k.smem, 32, 1, 0.08).map((b, j) => <Rc key={j} r={b} c="arr-mem-f" rx={0} />)}
       {k.tex.map((t, j) => <Rc key={'t' + j} r={t} c="unit-gpu" rx={0} />)}
-      <Rc r={k.tma} c="logic-cpu-f" rx={0} />
+      {tma && <Rc r={k.tma} c="logic-cpu-f" rx={0} />}
     </g>
   );
 }
@@ -222,17 +222,18 @@ export const PackageFull = memo(function PackageFull({ p, smDetail }: { p: Rect;
 });
 
 // ---------------------------------------------------------------- views
-export const GpuWorldArt = memo(function GpuWorldArt({ lod }: { lod: Lod }) {
+/** Server board: link traces, 4 link switches, NICs and the host tray, around 8 GPU packages (children). */
+export function ServerFrame({ children }: { children: React.ReactNode }) {
   return (
-    <g className="chipart gpu-art">
+    <g className="chipart kit">
       <rect className="board" x={GPU_BOARD.x} y={GPU_BOARD.y} width={GPU_BOARD.w} height={GPU_BOARD.h} rx={4} />
-      {/* NVLink traces: every GPU to every NVSwitch, orthogonal */}
+      {/* GPU-to-switch traces: every GPU to every switch, orthogonal */}
       <path className="wires" d={GPU_PKGS.flatMap((pk, i) => NVSWITCHES.map((sw, j) => {
         const top = i < 4, x1 = pk.x + 300 + j * 130, y1 = top ? pk.y + pk.h : pk.y, x2 = sw.x + 80 + (i % 4) * 110, y2 = top ? sw.y : sw.y + sw.h, ym = (y1 + y2) / 2;
         const c = 30 * Math.sign(x2 - x1), cy = top ? 30 : -30;
         return Math.abs(x2 - x1) < 61 ? `M${x1} ${y1}V${ym}H${x2}V${y2}` : `M${x1} ${y1}V${ym - cy}L${x1 + c} ${ym}H${x2 - c}L${x2} ${ym + cy}V${y2}`;
       })).join('')} />
-      {GPU_PKGS.map((pk, i) => (lod !== 'server' && i === 0 ? <PackageFull key={i} p={pk} smDetail={lod === 'sm'} /> : <PackageLite key={i} p={pk} />))}
+      {children}
       {NVSWITCHES.map((s, i) => (
         <g key={i}>
           <rect className="substrate" x={s.x} y={s.y} width={s.w} height={s.h} rx={4} />
@@ -249,6 +250,15 @@ export const GpuWorldArt = memo(function GpuWorldArt({ lod }: { lod: Lod }) {
       <rect className="ghost" x={HOST_TRAY.x} y={HOST_TRAY.y} width={HOST_TRAY.w} height={HOST_TRAY.h} rx={4} />
       {[0, 1].map(i => <Rc key={i} r={{ x: HOST_TRAY.x + 1500 + i * 1100, y: HOST_TRAY.y + 30, w: 500, h: 140 }} c="logic-cpu" rx={1} />)}
     </g>
+  );
+}
+
+/** DGX H100-style server (used on the Hopper architecture page). */
+export const GpuWorldArt = memo(function GpuWorldArt({ lod }: { lod: Lod }) {
+  return (
+    <ServerFrame>
+      {GPU_PKGS.map((pk, i) => (lod !== 'server' && i === 0 ? <PackageFull key={i} p={pk} smDetail={lod === 'sm'} /> : <PackageLite key={i} p={pk} />))}
+    </ServerFrame>
   );
 });
 

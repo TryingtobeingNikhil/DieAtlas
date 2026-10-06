@@ -5,9 +5,9 @@
 // Style rules: signals move at constant speed (linear), as short streaks along routed
 // wires; glow is a tight 1–4 px bloom on active elements only.
 
-import { type Rect, center, route, gpuPackage, smInside, cells, SM_OFF, HBM_OFF, GPU_PKGS } from './geometry';
+import { type Rect, center, route, gpuPackage, genGpuPackage, genCpuDie, DIMMS, smInside, cells, SM_OFF, HBM_OFF, GPU_PKGS } from './geometry';
 
-type Pt = [number, number];
+export type Pt = [number, number];
 export interface TF { x: number; y: number; k: number }
 export interface Palette { gpu: string; cpu: string; mem: string; err: string; text: string; muted: string }
 
@@ -148,71 +148,107 @@ export interface Scenario {
   paths: Wire[];
 }
 
-/** GPU 0, package view: memory requests SM → L2 (→ HBM) and back; SMs firing. */
-export function gpuPackageScenario(): Scenario {
-  const g = gpuPackage(GPU_PKGS[0]);
-  const L2_LAT = 260, HBM_LAT = 480;          // round-trip cycles, approx. (published microbenchmarks)
-  const toL2 = 130, l2ToHbm = 110;            // one-way legs; miss = 130 + 110 + 110 + 130 = 480
-  const active = g.sms.map((s, i) => ({ s, i })).filter(x => !SM_OFF.has(x.i));
-  const pickSms = active.filter((_, j) => j % 5 === 0);   // a spread of SMs that issue loads
-  const smWire = (s: Rect) => {
-    const top = s.y < g.l2[0].y, half = s.x + s.w / 2 < g.blockSched.x ? g.l2[0] : g.l2[1];
-    const c = center(s), yEdge = top ? half.y + 4 : half.y + half.h - 4;
-    const bx = Math.max(half.x + 8, Math.min(half.x + half.w - 8, c.x + 14));
+/** What a package-view scenario needs to know about a GPU floorplan. */
+export interface PkgGeo {
+  /** compute units that issue loads (enabled ones only) */
+  units: Rect[];
+  /** L2 halves: [left, right] */
+  l2: [Rect, Rect];
+  /** x that splits the die into the left and right L2 halves */
+  midX: number;
+  die: Rect;
+  /** memory controllers: [left, right] */
+  memctl: [Rect, Rect];
+  /** device-memory sites (stacks or chips) */
+  mem: Rect[];
+  /** host link: polyline from outside the package to the L2 */
+  host: Pt[];
+}
+export interface PkgTiming {
+  /** round trips in cycles (one value each; the note states the honest range) */
+  l2: number; mem: number; hz: number; note: string;
+}
+
+export function hopperGeo(): PkgGeo {
+  const g = gpuPackage(GPU_PKGS[0]), p = GPU_PKGS[0];
+  return {
+    units: g.sms.filter((_, i) => !SM_OFF.has(i)), l2: [g.l2[0], g.l2[1]], midX: g.blockSched.x, die: g.die,
+    memctl: [g.memctl[0], g.memctl[1]], mem: g.hbm.filter((_, i) => i !== HBM_OFF),
+    host: [[p.x + 520, p.y + p.h + 60], [p.x + 520, g.io[1].y + 4], [p.x + 520, g.l2[1].y + g.l2[1].h - 4]],
+  };
+}
+export function genericGpuGeo(): PkgGeo {
+  const p = GPU_PKGS[0], g = genGpuPackage(p), cx = g.die.x + g.die.w / 2;
+  return {
+    units: g.cus, l2: [g.l2h[0], g.l2h[1]], midX: cx, die: g.die, memctl: [g.memctl[0], g.memctl[1]], mem: g.mem,
+    host: [[g.hostIf.x + 40, p.y - 60], [g.hostIf.x + 40, g.hostIf.y + g.hostIf.h], [g.hostIf.x + 40, g.l2h[0].y + 4]],
+  };
+}
+/** H100: Luo et al. 2025 (H800 PCIe) measured L2 ≈ 258–414 cycles (near/far partition) and ≈ 556–744 on a miss. */
+export const HOPPER_TIMING: PkgTiming = { l2: 260, mem: 600, hz: 1.98e9, note: 'L2 hit ≈ 260–410 · HBM ≈ 560–740 cycles round trip (measured, approx.)' };
+/** Generic GPU: typical ranges, not any one product. */
+export const GENERIC_GPU_TIMING: PkgTiming = { l2: 300, mem: 600, hz: 2e9, note: 'L2 hit ~200–400 · device memory ~400–800 cycles round trip (typical)' };
+
+/** One GPU, package view: memory requests CU → L2 (→ device memory) and back; CUs firing. */
+export function gpuPackageScenario(g: PkgGeo, tm: PkgTiming): Scenario {
+  const toL2 = tm.l2 / 2, toMem = (tm.mem - tm.l2) / 2;   // one-way legs; miss = 2·toL2 + 2·toMem
+  const pick = g.units.filter((_, j) => j % 5 === 0 || g.units.length < 40);
+  const half = (r: Rect) => (r.x + r.w / 2 < g.midX ? g.l2[0] : g.l2[1]);
+  const unitWire = (s: Rect) => {
+    const h = half(s), top = s.y < h.y;
+    const c = center(s), yEdge = top ? h.y + 4 : h.y + h.h - 4;
+    const bx = Math.max(h.x + 8, Math.min(h.x + h.w - 8, c.x + 14));
     return new Wire([[c.x, c.y], [c.x, (c.y + yEdge) / 2], [bx, (c.y + yEdge) / 2], [bx, yEdge]] as Pt[], 5);
   };
-  const hbmWire = (half: Rect, h: Rect) => {
-    const left = h.x < g.die.x, mc = left ? g.memctl[0] : g.memctl[1];
-    const hc = center(h), y = hc.y + 10;
-    return new Wire([[center(half).x, center(half).y], [left ? half.x + 6 : half.x + half.w - 6, center(half).y], [mc.x + mc.w / 2, center(half).y], [mc.x + mc.w / 2, y], [hc.x, y]] as Pt[], 8);
+  const memWire = (h: Rect, m: Rect) => {
+    const left = m.x < g.die.x, mc = left ? g.memctl[0] : g.memctl[1];
+    const mcen = center(m), y = mcen.y + 10;
+    return new Wire([[center(h).x, center(h).y], [left ? h.x + 6 : h.x + h.w - 6, center(h).y], [mc.x + mc.w / 2, center(h).y], [mc.x + mc.w / 2, y], [mcen.x, y]] as Pt[], 8);
   };
   const P = 1200, EVERY = 30;
   const events = Array.from({ length: P / EVERY }, (_, n) => {
-    const sm = pickSms[Math.floor(hash(n, 1) * pickSms.length)].s;
+    const u = pick[Math.floor(hash(n, 1) * pick.length)];
     const hit = hash(n, 2) < 0.6;
-    const left = center(sm).x < g.blockSched.x;
-    const sites = [0, 1, 2, 3, 4, 5].filter(i => i !== HBM_OFF && (g.hbm[i].x < g.die.x) === left);
-    const site = g.hbm[sites[Math.floor(hash(n, 3) * sites.length)]];
-    const half = left ? g.l2[0] : g.l2[1];
-    const a = smWire(sm), b = hbmWire(half, site);
-    const bank = cells(half, 8, 2, 0.06)[Math.floor(hash(n, 4) * 16)];
-    return { start: n * EVERY, sm, hit, a, ar: a.reversed(), b, br: b.reversed(), site, half, bank };
+    const h = half(u), left = h === g.l2[0];
+    const sites = g.mem.filter(m => (m.x < g.die.x) === left);
+    const site = sites[Math.floor(hash(n, 3) * sites.length)];
+    const a = unitWire(u), b = memWire(h, site);
+    const bank = cells(h, 8, 2, 0.06)[Math.floor(hash(n, 4) * 16)];
+    return { start: n * EVERY, u, hit, a, ar: a.reversed(), b, br: b.reversed(), site, bank };
   });
-  const host = new Wire([[GPU_PKGS[0].x + 520, GPU_PKGS[0].y + GPU_PKGS[0].h + 60], [GPU_PKGS[0].x + 520, g.io[1].y + 4], [GPU_PKGS[0].x + 520, g.l2[1].y + g.l2[1].h - 4]] as Pt[], 6);
+  const host = new Wire(g.host, 6);
   return {
-    rate: 110, deviceHz: 1.98e9,
-    note: `L2 hit ≈ ${L2_LAT} · HBM ≈ ${HBM_LAT} cycles round trip (approx.)`,
+    rate: 110, deviceHz: tm.hz, note: tm.note,
     paths: events.slice(0, 6).flatMap(e => [e.a, e.b]),
     draw(d, cyc) {
       const { pal } = d;
-      // SMs firing: green flashes on the tiles (compute)
-      for (const { s, i } of active) {
+      // compute units firing: green flashes on the tiles
+      g.units.forEach((s, i) => {
         const win = Math.floor(cyc / 14), ph = (cyc % 14) / 14;
         if (hash(i, win) < 0.09) flash(d, s, pal.gpu, 0.32 * (1 - ph));
-      }
+      });
       for (const e of events) {
         let dt = ((cyc - e.start) % P + P) % P;
-        if (dt > HBM_LAT + 20) continue;
+        if (dt > tm.mem + 20) continue;
+        if (dt < toL2) streak(d, e.a, (dt / toL2) * e.a.len, pal.mem, 12, 1.5);
         if (e.hit) {
-          if (dt < toL2) streak(d, e.a, (dt / toL2) * e.a.len, pal.mem, 12, 1.5);
-          else if (dt < L2_LAT) streak(d, e.ar, ((dt - toL2) / toL2) * e.a.len, pal.mem, 20, 2.5);
+          if (dt >= toL2 && dt < tm.l2) streak(d, e.ar, ((dt - toL2) / toL2) * e.a.len, pal.mem, 20, 2.5);
           flash(d, e.bank, pal.mem, 0.7 * decay(dt - toL2, 14));
           mark(d, [center(e.bank).x, e.bank.y], '✓', pal.mem, decay(dt - toL2, 40));
-          flash(d, e.sm, pal.mem, 0.45 * decay(dt - L2_LAT, 12));
+          flash(d, e.u, pal.mem, 0.45 * decay(dt - tm.l2, 12));
         } else {
-          if (dt < toL2) streak(d, e.a, (dt / toL2) * e.a.len, pal.mem, 12, 1.5);
           outline(d, e.bank, pal.err, decay(dt - toL2, 30), 1.5);
           mark(d, [center(e.bank).x, e.bank.y], '✕ miss', pal.err, decay(dt - toL2, 50));
           dt -= toL2;
-          if (dt >= 0 && dt < l2ToHbm) streak(d, e.b, (dt / l2ToHbm) * e.b.len, pal.mem, 12, 1.5);
-          flash(d, e.site, pal.mem, 0.28 * decay(dt - l2ToHbm, 24));
-          dt -= l2ToHbm;
+          if (dt >= 0 && dt < toMem) streak(d, e.b, (dt / toMem) * e.b.len, pal.mem, 12, 1.5);
+          flash(d, e.site, pal.mem, 0.28 * decay(dt - toMem, 24));
+          dt -= toMem;
           // the line streams back: a longer, brighter pulse
-          if (dt >= 0 && dt < l2ToHbm) streak(d, e.br, (dt / l2ToHbm) * e.b.len, pal.mem, 30, 2.5);
-          flash(d, e.bank, pal.mem, 0.7 * decay(dt - l2ToHbm, 14));
-          dt -= l2ToHbm;
+          if (dt >= 0 && dt < toMem) streak(d, e.br, (dt / toMem) * e.b.len, pal.mem, 30, 2.5);
+          flash(d, e.bank, pal.mem, 0.7 * decay(dt - toMem, 14));
+          dt -= toMem;
           if (dt >= 0 && dt < toL2) streak(d, e.ar, (dt / toL2) * e.a.len, pal.mem, 20, 2.5);
-          flash(d, e.sm, pal.mem, 0.45 * decay(dt - toL2, 12));
+          flash(d, e.u, pal.mem, 0.45 * decay(dt - toL2, 12));
         }
       }
       const h = ((cyc % 400) + 400) % 400;
@@ -221,10 +257,68 @@ export function gpuPackageScenario(): Scenario {
   };
 }
 
+/**
+ * Generic CPU die: loads that miss in a core's private caches go over the ring to an L3
+ * slice; L3 misses continue to the memory controller and out to a DIMM. Typical desktop values.
+ */
+export function cpuDieScenario(): Scenario {
+  const g = genCpuDie(), r = g.ring, ry = r.y + r.h / 2;
+  const L3 = 50, MEM = 380;                                   // round trips in cycles (typical)
+  const toL3 = L3 / 2, toMem = (MEM - L3) / 2;
+  const dimm = DIMMS[0];
+  const reqWire = (ci: number, si: number) => {
+    const c = g.cores[ci], s = g.slices[si], top = ci < 4;
+    const cx = c.x + c.w / 2, sx = s.x + s.w / 2, sy = s.y + s.h / 2;
+    return new Wire([[cx, top ? c.y + c.h - 6 : c.y + 6], [cx, ry], [sx, ry], [sx, sy]] as Pt[], 4);
+  };
+  const memWire = (si: number) => {
+    const s = g.slices[si], sx = s.x + s.w / 2, mc = center(g.imc);
+    return new Wire([[sx, s.y + s.h / 2], [sx, ry], [mc.x, ry], [mc.x, mc.y - 60], [dimm.x + dimm.w / 2, mc.y - 60]] as Pt[], 6);
+  };
+  const P = 900, EVERY = 45;
+  const events = Array.from({ length: P / EVERY }, (_, n) => {
+    const ci = Math.floor(hash(n, 1) * 8), si = Math.floor(hash(n, 2) * 8), hit = hash(n, 3) < 0.65;
+    const a = reqWire(ci, si), b = memWire(si);
+    return { start: n * EVERY, core: g.cores[ci], slice: g.slices[si], hit, a, ar: a.reversed(), b, br: b.reversed() };
+  });
+  return {
+    rate: 45, deviceHz: 4e9,
+    note: 'L3 hit ~40–80 · DRAM ~300–450 cycles round trip (typical desktop, approx.)',
+    paths: events.slice(0, 6).flatMap(e => [e.a, e.b]),
+    draw(d, cyc) {
+      const { pal } = d;
+      for (const e of events) {
+        let dt = ((cyc - e.start) % P + P) % P;
+        if (dt > MEM + 20) continue;
+        flash(d, e.core, pal.cpu, 0.18 * decay(dt, 10), false);
+        if (dt < toL3) streak(d, e.a, (dt / toL3) * e.a.len, pal.mem, 14, 1.5);
+        if (e.hit) {
+          if (dt >= toL3 && dt < L3) streak(d, e.ar, ((dt - toL3) / toL3) * e.a.len, pal.mem, 20, 2.5);
+          flash(d, e.slice, pal.mem, 0.6 * decay(dt - toL3, 8));
+          mark(d, [center(e.slice).x, e.slice.y], '✓ L3', pal.mem, decay(dt - toL3, 30));
+        } else {
+          outline(d, e.slice, pal.err, decay(dt - toL3, 30), 1.5);
+          mark(d, [center(e.slice).x, e.slice.y], '✕ miss', pal.err, decay(dt - toL3, 40));
+          dt -= toL3;
+          if (dt >= 0 && dt < toMem) streak(d, e.b, (dt / toMem) * e.b.len, pal.mem, 14, 1.5);
+          dt -= toMem;
+          if (dt >= 0 && dt < toMem) streak(d, e.br, (dt / toMem) * e.b.len, pal.mem, 30, 2.5);
+          dt -= toMem;
+          if (dt >= 0 && dt < toL3) streak(d, e.ar, (dt / toL3) * e.a.len, pal.mem, 20, 2.5);
+          flash(d, e.core, pal.mem, 0.35 * decay(dt - toL3, 10));
+        }
+      }
+    },
+  };
+}
+
 /** Inside SM 0: four schedulers issue one warp-instruction per cycle each. */
-export function smScenario(s: Rect): Scenario {
+export function smScenario(s: Rect, generic = false): Scenario {
   const k = smInside(s);
   const PROG = ['FFMA', 'FFMA', 'LDS', 'FFMA', 'HMMA', 'IMAD', 'FFMA', 'DFMA', 'FFMA·div', 'LDG', 'FFMA', 'HMMA'];
+  // vendor-neutral names for the generic compute unit
+  const NAME: Record<string, string> = generic ? { FFMA: 'FMA', HMMA: 'MMA', IMAD: 'INT', DFMA: 'FP64', LDS: 'LD.shared', LDG: 'LD.global' } : {};
+  const nm = (o: string) => NAME[o] ?? o;
   const SMEM_LAT = 30;
   const parts = k.inner.map((q, p) => {
     const unitOf = (op: string): Rect => (op.startsWith('FFMA') ? q.fp32 : op === 'IMAD' ? q.int32 : op === 'DFMA' ? q.fp64 : op === 'HMMA' ? q.tensor : q.ldst);
@@ -248,7 +342,7 @@ export function smScenario(s: Rect): Scenario {
   const warp = (n: number, p: number) => (((n * 5 + p * 7) % 16) + 16) % 16;
   return {
     rate: 4, deviceHz: 1.98e9,
-    note: `1 warp-instruction per scheduler per cycle · shared memory ≈ ${SMEM_LAT} cycles (approx.)`,
+    note: generic ? '1 warp-instruction per scheduler per cycle · shared memory ~20–40 cycles (typical)' : `1 warp-instruction per scheduler per cycle · shared memory ≈ ${SMEM_LAT} cycles (approx.)`,
     paths: parts.flatMap(pp => [pp.issue, pp.units.FFMA]),
     draw(d, cyc) {
       const { pal } = d;
@@ -258,7 +352,7 @@ export function smScenario(s: Rect): Scenario {
         // scheduler picks a warp: amber flash, flit travels to dispatch, then to the unit
         outline(d, pp.q.sched, pal.cpu, decay(f, 0.4), 1);
         flash(d, pp.q.sched, pal.cpu, 0.22 * decay(f, 0.35), false);
-        if (f < 0.35) flit(d, pp.issue, (f / 0.35) * pp.issue.len, pal.cpu, `w${warp(n, p)} ${base}`);
+        if (f < 0.35) flit(d, pp.issue, (f / 0.35) * pp.issue.len, pal.cpu, `w${warp(n, p)} ${nm(base)}`);
         flash(d, pp.q.regs, pal.mem, 0.35 * decay(f - 0.3, 0.3));
         const wire = pp.units[base === 'LDG' ? 'LDS' : base];
         if (f >= 0.35 && f < 0.55) flit(d, wire, ((f - 0.35) / 0.2) * wire.len, pal.cpu);
@@ -292,7 +386,7 @@ export function smScenario(s: Rect): Scenario {
             flash(d, pp.q.regs, pal.mem, 0.45 * decay(r - 1, 0.5));
           } else if (o === 'LDG') {
             if (t >= 0 && t < 2) streak(d, pp.out, (t / 2) * pp.out.len, pal.mem, 18, 2);
-            if (t >= 0.5 && t < 4) mark(d, [center(pp.q.ldst).x, pp.q.ldst.y], 'LDG → L2/HBM ≈ 260–480 cyc', pal.mem, Math.min(1, 4 - t));
+            if (t >= 0.5 && t < 4) mark(d, [center(pp.q.ldst).x, pp.q.ldst.y], generic ? 'load → L2/memory ~200–800 cyc' : 'LDG → L2/HBM ≈ 260–740 cyc', pal.mem, Math.min(1, 4 - t));
           }
         });
       }

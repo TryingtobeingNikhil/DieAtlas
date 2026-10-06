@@ -9,7 +9,7 @@ const warpRows = Array.from({ length: 8 }, (_, i) => `warp ${i}`);
 export const simtWarps: Lesson = {
   id: 'g-simt',
   world: 'gpu',
-  components: ['gpu.sms', 'gpu.blocksched', 'gpu.warpsched'],
+  components: ['gpu.cu', 'gpu.cmdproc', 'gpu.warpsched'],
   level: 'beginner',
   minutes: 6,
   status: 'ready',
