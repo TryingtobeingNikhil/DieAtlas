@@ -139,45 +139,45 @@ p { margin: 0; }
 
 
 /* ================= drawing kit: chip views as engineering drawings ================= */
-.gpu-art .board { fill: var(--die-a); stroke: var(--hairline); stroke-width: 1px; }
-.gpu-art .substrate { fill: var(--substrate); stroke: var(--hairline-2); stroke-width: 1px; }
-.gpu-art .interposer { fill: var(--interposer); stroke: color-mix(in srgb, var(--text) 16%, transparent); stroke-width: 1px; }
-.gpu-art .die { fill: var(--silicon); stroke: color-mix(in srgb, var(--text) 32%, transparent); stroke-width: 1px; }
-.gpu-art .seal { fill: none; stroke: color-mix(in srgb, var(--text) 20%, transparent); stroke-width: 0.5px; }
-.gpu-art .pads { fill: color-mix(in srgb, var(--text) 30%, transparent); }
-.gpu-art .caps { fill: color-mix(in srgb, var(--cpu) 22%, var(--substrate)); }
-.gpu-art .wires { fill: none; stroke: color-mix(in srgb, var(--mem) 24%, transparent); stroke-width: 0.5px; }
-.gpu-art .hbm-body { fill: color-mix(in srgb, var(--mem) 5%, var(--silicon)); }
-.gpu-art .bevel-hi { fill: none; stroke: var(--bevel-hi); stroke-width: 1px; }
-.gpu-art .bevel-lo { fill: none; stroke: var(--bevel-lo); stroke-width: 1px; }
-.gpu-art .hair-mem { stroke: color-mix(in srgb, var(--mem) 45%, transparent); stroke-width: 0.5px; }
-.gpu-art .det-mem { stroke: color-mix(in srgb, var(--mem) 22%, transparent); stroke-width: 0.5px; }
-.gpu-art .k-off { opacity: 0.35; }
-.gpu-art .die-note { font: 500 9px var(--mono); fill: var(--muted); }
-.gpu-art .logic-mem { fill: url(#sc-mem); stroke: color-mix(in srgb, var(--mem) 45%, transparent); stroke-width: 0.5px; }
-.gpu-art .logic-cpu { fill: url(#sc-cpu); stroke: color-mix(in srgb, var(--cpu) 50%, transparent); stroke-width: 1px; }
-.gpu-art .logic-cpu-f { fill: url(#sc-cpu-f); stroke: color-mix(in srgb, var(--cpu) 45%, transparent); stroke-width: 0.5px; }
-.gpu-art .arr-mem { fill: url(#bc-mem); stroke: color-mix(in srgb, var(--mem) 38%, transparent); stroke-width: 0.5px; }
-.gpu-art .arr-mem-f { fill: url(#bc-mem-f); stroke: color-mix(in srgb, var(--mem) 40%, transparent); stroke-width: 0.5px; }
-.gpu-art .blk-gpu { fill: none; stroke: color-mix(in srgb, var(--gpu) 40%, transparent); stroke-width: 1px; }
-.gpu-art .blk-mem { fill: none; stroke: color-mix(in srgb, var(--mem) 45%, transparent); stroke-width: 1px; }
-.gpu-art .t-gpu { fill: color-mix(in srgb, var(--gpu) 7%, transparent); }
-.gpu-art .t-gpu2 { fill: color-mix(in srgb, var(--gpu) 15%, transparent); }
-.gpu-art .t-mem { fill: color-mix(in srgb, var(--mem) 9%, transparent); }
-.gpu-art .t-cpu { fill: color-mix(in srgb, var(--cpu) 10%, transparent); }
-.gpu-art .det-line { stroke: color-mix(in srgb, var(--text) 18%, transparent); stroke-width: 0.5px; }
-.gpu-art .sm-out { fill: color-mix(in srgb, var(--gpu) 7%, var(--silicon)); stroke: color-mix(in srgb, var(--gpu) 60%, transparent); stroke-width: 0.5px; }
-.gpu-art .t-edge-cpu { stroke: color-mix(in srgb, var(--cpu) 40%, transparent); stroke-width: 0.5px; }
-.gpu-art .t-edge-mem { stroke: color-mix(in srgb, var(--mem) 40%, transparent); stroke-width: 0.5px; }
-.gpu-art .sm-off { opacity: 0.25; }
-.gpu-art .sm-detail .sm-out-hi { fill: var(--silicon); stroke: color-mix(in srgb, var(--gpu) 65%, transparent); stroke-width: 1px; }
-.gpu-art .lane { fill: color-mix(in srgb, var(--gpu) 14%, transparent); stroke: color-mix(in srgb, var(--gpu) 50%, transparent); stroke-width: 0.5px; }
-.gpu-art .lane64 { fill: color-mix(in srgb, var(--gpu) 7%, transparent); stroke: color-mix(in srgb, var(--gpu) 35%, transparent); }
-.gpu-art .mac { fill: url(#mac-f); stroke: color-mix(in srgb, var(--gpu) 60%, transparent); stroke-width: 0.5px; }
-.gpu-art .unit-mem { fill: color-mix(in srgb, var(--mem) 10%, transparent); stroke: color-mix(in srgb, var(--mem) 45%, transparent); stroke-width: 0.5px; }
-.gpu-art .unit-gpu { fill: color-mix(in srgb, var(--gpu) 8%, transparent); stroke: color-mix(in srgb, var(--gpu) 40%, transparent); stroke-width: 0.5px; }
-.gpu-art .phy { fill: color-mix(in srgb, var(--mem) 28%, transparent); }
-.gpu-art .ghost { fill: none; stroke: var(--muted); stroke-dasharray: 4 4; stroke-width: 0.5px; }
+.kit .board { fill: var(--die-a); stroke: var(--hairline); stroke-width: 1px; }
+.kit .substrate { fill: var(--substrate); stroke: var(--hairline-2); stroke-width: 1px; }
+.kit .interposer { fill: var(--interposer); stroke: color-mix(in srgb, var(--text) 16%, transparent); stroke-width: 1px; }
+.kit .die { fill: var(--silicon); stroke: color-mix(in srgb, var(--text) 32%, transparent); stroke-width: 1px; }
+.kit .seal { fill: none; stroke: color-mix(in srgb, var(--text) 20%, transparent); stroke-width: 0.5px; }
+.kit .pads { fill: color-mix(in srgb, var(--text) 30%, transparent); }
+.kit .caps { fill: color-mix(in srgb, var(--cpu) 22%, var(--substrate)); }
+.kit .wires { fill: none; stroke: color-mix(in srgb, var(--mem) 24%, transparent); stroke-width: 0.5px; }
+.kit .hbm-body { fill: color-mix(in srgb, var(--mem) 5%, var(--silicon)); }
+.kit .bevel-hi { fill: none; stroke: var(--bevel-hi); stroke-width: 1px; }
+.kit .bevel-lo { fill: none; stroke: var(--bevel-lo); stroke-width: 1px; }
+.kit .hair-mem { stroke: color-mix(in srgb, var(--mem) 45%, transparent); stroke-width: 0.5px; }
+.kit .det-mem { stroke: color-mix(in srgb, var(--mem) 22%, transparent); stroke-width: 0.5px; }
+.kit .k-off { opacity: 0.35; }
+.kit .die-note { font: 500 9px var(--mono); fill: var(--muted); }
+.kit .logic-mem { fill: url(#sc-mem); stroke: color-mix(in srgb, var(--mem) 45%, transparent); stroke-width: 0.5px; }
+.kit .logic-cpu { fill: url(#sc-cpu); stroke: color-mix(in srgb, var(--cpu) 50%, transparent); stroke-width: 1px; }
+.kit .logic-cpu-f { fill: url(#sc-cpu-f); stroke: color-mix(in srgb, var(--cpu) 45%, transparent); stroke-width: 0.5px; }
+.kit .arr-mem { fill: url(#bc-mem); stroke: color-mix(in srgb, var(--mem) 38%, transparent); stroke-width: 0.5px; }
+.kit .arr-mem-f { fill: url(#bc-mem-f); stroke: color-mix(in srgb, var(--mem) 40%, transparent); stroke-width: 0.5px; }
+.kit .blk-gpu { fill: none; stroke: color-mix(in srgb, var(--gpu) 40%, transparent); stroke-width: 1px; }
+.kit .blk-mem { fill: none; stroke: color-mix(in srgb, var(--mem) 45%, transparent); stroke-width: 1px; }
+.kit .t-gpu { fill: color-mix(in srgb, var(--gpu) 7%, transparent); }
+.kit .t-gpu2 { fill: color-mix(in srgb, var(--gpu) 15%, transparent); }
+.kit .t-mem { fill: color-mix(in srgb, var(--mem) 9%, transparent); }
+.kit .t-cpu { fill: color-mix(in srgb, var(--cpu) 10%, transparent); }
+.kit .det-line { stroke: color-mix(in srgb, var(--text) 18%, transparent); stroke-width: 0.5px; }
+.kit .sm-out { fill: color-mix(in srgb, var(--gpu) 7%, var(--silicon)); stroke: color-mix(in srgb, var(--gpu) 60%, transparent); stroke-width: 0.5px; }
+.kit .t-edge-cpu { stroke: color-mix(in srgb, var(--cpu) 40%, transparent); stroke-width: 0.5px; }
+.kit .t-edge-mem { stroke: color-mix(in srgb, var(--mem) 40%, transparent); stroke-width: 0.5px; }
+.kit .sm-off { opacity: 0.25; }
+.kit .sm-detail .sm-out-hi { fill: var(--silicon); stroke: color-mix(in srgb, var(--gpu) 65%, transparent); stroke-width: 1px; }
+.kit .lane { fill: color-mix(in srgb, var(--gpu) 14%, transparent); stroke: color-mix(in srgb, var(--gpu) 50%, transparent); stroke-width: 0.5px; }
+.kit .lane64 { fill: color-mix(in srgb, var(--gpu) 7%, transparent); stroke: color-mix(in srgb, var(--gpu) 35%, transparent); }
+.kit .mac { fill: url(#mac-f); stroke: color-mix(in srgb, var(--gpu) 60%, transparent); stroke-width: 0.5px; }
+.kit .unit-mem { fill: color-mix(in srgb, var(--mem) 10%, transparent); stroke: color-mix(in srgb, var(--mem) 45%, transparent); stroke-width: 0.5px; }
+.kit .unit-gpu { fill: color-mix(in srgb, var(--gpu) 8%, transparent); stroke: color-mix(in srgb, var(--gpu) 40%, transparent); stroke-width: 0.5px; }
+.kit .phy { fill: color-mix(in srgb, var(--mem) 28%, transparent); }
+.kit .ghost { fill: none; stroke: var(--muted); stroke-dasharray: 4 4; stroke-width: 0.5px; }
 
 /* regions: invisible until hovered; 1 px edge, 1.5 px only when selected; tight bloom */
 .rg { fill: transparent; stroke: transparent; stroke-width: 1px; cursor: pointer; transition: fill 200ms var(--ease), stroke 200ms var(--ease); }
@@ -199,7 +199,7 @@ p { margin: 0; }
   background: color-mix(in srgb, var(--bg) 88%, transparent); white-space: nowrap; max-width: 200px; }
 .callout .c1 { font: 600 11px/1.3 var(--sans); letter-spacing: 0.06em; text-transform: uppercase; color: var(--text); }
 .callout .c1 .g { color: var(--kc); margin-right: 5px; letter-spacing: 0; }
-.callout .c2 { font: 400 10.5px/1.3 var(--mono); color: var(--muted); }
+.callout .c2 { font: 400 10.5px/1.3 var(--mono); color: var(--muted); white-space: normal; max-width: 190px; }
 .callout .c3 { font: 400 10.5px/1.3 var(--mono); color: color-mix(in srgb, var(--kc) 80%, var(--text)); }
 .callout:hover .c1, .callout.hov .c1, .callout.sel .c1 { color: var(--kc); }
 .callout.sel { box-shadow: inset 0 -1px 0 var(--kc); }
@@ -443,3 +443,186 @@ p { margin: 0; }
   *, *::before, *::after { animation: none !important; transition-duration: 0ms !important; }
   .flowdot { display: none; }
 }
+.kit .board-area { fill: color-mix(in srgb, var(--text) 2%, transparent); stroke: var(--hairline); stroke-width: 0.5px; stroke-dasharray: 3 3; }
+.kit .core-out { fill: color-mix(in srgb, var(--cpu) 4%, var(--silicon)); stroke: color-mix(in srgb, var(--cpu) 60%, transparent); stroke-width: 0.5px; }
+.kit .blk-cpu { fill: none; stroke: color-mix(in srgb, var(--cpu) 40%, transparent); stroke-width: 0.5px; }
+.kit .logic-cpu-c { fill: url(#sc-cpu-c); stroke: color-mix(in srgb, var(--cpu) 45%, transparent); stroke-width: 0.5px; }
+.kit .arr-mem-c { fill: url(#bc-mem-c); stroke: color-mix(in srgb, var(--mem) 40%, transparent); stroke-width: 0.5px; }
+.kit .rail { fill: none; stroke: color-mix(in srgb, var(--mem) 55%, transparent); stroke-width: 0.75px; }
+.kit .stop { fill: color-mix(in srgb, var(--mem) 18%, transparent); stroke: color-mix(in srgb, var(--mem) 60%, transparent); stroke-width: 0.5px; }
+
+/* ================= map tooltip + callout ⓘ ================= */
+.tip { max-width: 250px; }
+.tip.pinned { pointer-events: auto; }
+.tip .tip-sub { font: 400 11.5px var(--mono); color: var(--muted); }
+.tip .text2 { margin-top: 2px; }
+.tip .tip-cta { margin-top: 6px; font: 500 11.5px var(--mono); color: var(--kc, var(--mem)); color: var(--muted); }
+.tip .tip-cta a { color: var(--text); text-decoration: underline; text-underline-offset: 2px; }
+.callout { display: flex; align-items: flex-start; gap: 2px; padding: 0; }
+.callout .c-main { display: grid; gap: 1px; padding: 2px 4px; text-align: left; }
+.callout .c-info { font: 400 12px/1 var(--sans); color: var(--muted); padding: 3px 3px 2px; border-radius: 3px; opacity: 0.75; }
+.callout .c-info:hover, .callout .c-info[aria-expanded='true'] { color: var(--kc); opacity: 1; }
+@media (hover: none) { .callout .c-info { opacity: 1; padding: 4px 6px; } }
+
+/* ================= component pages ================= */
+.pp { max-width: 1440px; margin: 0 auto; padding: 28px 24px 96px; }
+.pp-head { display: grid; gap: 6px; margin-bottom: 18px; }
+.pp-head h1 { font: 600 32px/1.15 var(--display); display: flex; gap: 10px; align-items: baseline; }
+.pp-head .techsub { font: 400 13px var(--mono); color: var(--muted); }
+.pp-head .crumbline a { color: var(--muted); padding: 1px 3px; }
+.pp-head .crumbline a:hover { color: var(--text); }
+.pp-grid { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 36px; align-items: start; }
+.pp-figwrap { position: sticky; top: 72px; }
+.pp-fig { border: 1px solid var(--hairline); border-radius: var(--r-card); background: var(--surface); padding: 14px 14px 10px; }
+.pp-figph { aspect-ratio: 800 / 440; }
+.pp-figcap { display: flex; align-items: center; gap: 10px; justify-content: space-between; margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--hairline); min-height: 34px; font-size: 13.5px; }
+.pp-figcap .now { display: inline-flex; align-items: center; gap: 7px; color: var(--text-2); }
+.pp-figcap .now i { width: 6px; height: 6px; border-radius: 50%; background: var(--kc); display: block; animation: nowPulse 1.6s var(--ease) infinite; }
+.pp-stepctl { display: inline-flex; gap: 6px; }
+.pp-text { max-width: 640px; font-size: 16px; line-height: 1.68; color: var(--text); }
+.pp-text section { padding: 4px 0 22px; }
+.pp-text section + section { border-top: 1px solid var(--hairline); padding-top: 20px; }
+.pp-text h2 { font: 600 13px var(--sans); letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
+.pp-text h3 { font: 600 16px/1.35 var(--display); margin: 18px 0 4px; display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; }
+.pp-text p + p { margin-top: 10px; }
+.pp-text section > .btn { margin-top: 10px; }
+.pp-lede { font-size: 18px; line-height: 1.6; }
+.icode { font-size: 0.88em; background: var(--surface-2); border: 1px solid var(--hairline); border-radius: 4px; padding: 0 4px; white-space: nowrap; }
+.partref { border-bottom: 1.5px solid color-mix(in srgb, var(--kc) 55%, transparent); cursor: default; transition: background 150ms var(--ease); border-radius: 2px; }
+.partref:hover, .partref:focus-visible { background: color-mix(in srgb, var(--kc) 14%, transparent); outline: none; }
+.term { text-decoration: underline dotted color-mix(in srgb, var(--text) 55%, transparent); text-decoration-thickness: 1.5px; text-underline-offset: 3px; cursor: help; border-radius: 2px; }
+.term:focus-visible { outline: 1px solid var(--math); outline-offset: 1px; }
+.term-missing { text-decoration-color: var(--err); }
+.term-tip { position: fixed; left: 0; top: 0; z-index: 60; max-width: 300px; padding: 8px 12px; border-radius: 8px; font-size: 13.5px; line-height: 1.45; pointer-events: none;
+  background: var(--raised); border: 1px solid var(--hairline-2); box-shadow: var(--shadow-pop); opacity: 0; transition: opacity 120ms var(--ease); }
+.term-tip.on { opacity: 1; }
+.term-tip b { color: var(--math); font-weight: 600; }
+.pp-steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; counter-reset: s; }
+.pp-steps li { padding: 10px 12px 12px; margin: 0 -12px; border-radius: 10px; border: 1px solid transparent; transition: background 200ms var(--ease), border-color 200ms var(--ease); }
+.pp-steps li.cur { background: var(--surface); border-color: color-mix(in srgb, var(--kc) 45%, var(--hairline)); }
+.pp-stephead { display: flex; gap: 10px; align-items: baseline; font: 600 16px/1.35 var(--display); text-align: left; padding: 0; margin-bottom: 4px; }
+.pp-stephead .n { font: 500 12px var(--mono); color: var(--muted); border: 1px solid var(--hairline-2); border-radius: 50%; width: 22px; height: 22px; display: inline-grid; place-items: center; flex: none; transform: translateY(-1px); }
+.pp-steps li.cur .n { color: var(--bg); background: var(--kc); border-color: var(--kc); }
+.pp-stephead:hover { color: var(--kc); }
+.pp-steps p { color: var(--text-2); }
+.pp-steps li.cur p { color: var(--text); }
+.pp-stepbar { display: flex; align-items: center; gap: 12px; margin-top: 12px; flex-wrap: wrap; }
+.pp-nums { display: grid; gap: 0; margin: 0; }
+.pp-nums > div { display: grid; grid-template-columns: minmax(0, 15em) minmax(0, 1fr); gap: 4px 18px; padding: 9px 0; border-top: 1px solid var(--hairline); }
+.pp-nums > div:first-child { border-top: 0; }
+.pp-nums dt { font: 500 14px/1.45 var(--mono); color: var(--kc); }
+.pp-nums dd { margin: 0; font-size: 15px; color: var(--text-2); }
+.pp-scope { font-size: 13px; color: var(--muted); margin-top: 8px; }
+.pp-real { margin-top: 18px; font-size: 15px; color: var(--text-2); }
+.pp-real b { color: var(--text); }
+.pp-deeper { }
+.pp-deeper-h { display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: baseline; width: 100%; text-align: left; padding: 6px 0; font: 600 18px var(--display); color: var(--math); }
+.pp-deeper-h .chev { margin-left: auto; transition: transform 200ms var(--ease); align-self: center; color: var(--muted); }
+.pp-deeper.open .pp-deeper-h .chev { transform: rotate(180deg); }
+.pp-deeper-b { border-left: 2px solid color-mix(in srgb, var(--math) 40%, transparent); padding-left: 16px; margin-top: 6px; }
+.pp-showbtn { font: 500 11px var(--mono); color: var(--muted); border: 1px solid var(--hairline-2); border-radius: 4px; padding: 1px 6px; }
+.pp-showbtn:hover { color: var(--text); border-color: var(--muted); }
+.pp-formula { padding: 8px 0; }
+.pp-formula .formula { font-size: 17px; }
+.pp-worked { margin-top: 14px; padding: 12px 14px; background: var(--surface); border: 1px solid var(--hairline); border-radius: 10px; font-size: 15px; }
+.pp-worked ol { margin: 6px 0; padding-left: 20px; color: var(--text-2); }
+.pp-links ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.pp-links li { display: grid; gap: 2px; }
+.pp-links li a { font-weight: 600; display: inline-flex; gap: 6px; align-items: center; }
+.pp-links li a:hover { color: var(--kc); }
+.pp-links .text2 { font-size: 14.5px; }
+.pp-sources ul { margin: 0; padding-left: 18px; font-size: 13.5px; color: var(--text-2); line-height: 1.55; }
+@media (max-width: 1000px) {
+  .pp-grid { grid-template-columns: 1fr; gap: 20px; }
+  .pp-figwrap { position: sticky; top: 56px; z-index: 5; background: var(--bg); padding-bottom: 6px; }
+  .pp-fig { padding: 8px 8px 6px; }
+  .pp-fig .fig { max-height: 34vh; }
+  .pp-text { max-width: none; }
+}
+@media (max-width: 720px) {
+  .pp { padding: 16px 16px 96px; }
+  .pp-head h1 { font-size: 26px; }
+  .pp-nums > div { grid-template-columns: 1fr; }
+  .pp-figcap { font-size: 12.5px; }
+}
+
+/* ================= figures ================= */
+.fig { width: 100%; height: auto; display: block; overflow: visible; }
+.fig * { vector-effect: non-scaling-stroke; }
+.fig [data-p] { transition: opacity 250ms var(--ease); }
+.fig.has-hl [data-p]:not(.on) { opacity: 0.22; }
+.fig.has-hl [data-p].on .fb-r, .fig.has-hl .fb.on > .fb-r { stroke-width: 1.5px; filter: drop-shadow(0 0 3px color-mix(in srgb, var(--fk) 50%, transparent)); }
+.fig .fb { --fk: var(--text-2); }
+.fig .fb-cpu { --fk: var(--cpu); } .fig .fb-mem { --fk: var(--mem); } .fig .fb-gpu { --fk: var(--gpu); } .fig .fb-err { --fk: var(--err); }
+.fig .fb-r { fill: color-mix(in srgb, var(--fk) 6%, transparent); stroke: color-mix(in srgb, var(--fk) 60%, transparent); stroke-width: 1px; transition: fill 150ms var(--ease), stroke 150ms var(--ease); }
+.fig .fb.lit > .fb-r, .fig .lit > .fb-r { fill: color-mix(in srgb, var(--fk) 22%, transparent); stroke: var(--fk); }
+.fig .fb.stall > .fb-r { fill: color-mix(in srgb, var(--err) 18%, transparent); stroke: var(--err); }
+.fig .fl { font: 600 12.5px var(--sans); letter-spacing: 0.07em; fill: var(--text); }
+.fig .fl-s { font: 400 11.5px var(--mono); fill: var(--muted); }
+.fig .k-cpu-t { fill: var(--cpu); } .fig .k-mem-t { fill: var(--mem); } .fig .k-gpu-t { fill: var(--gpu); } .fig .k-err-t { fill: var(--err); } .fig .k-math-t { fill: var(--math); }
+.fig .fw { fill: none; stroke: color-mix(in srgb, var(--text) 35%, transparent); stroke-width: 1px; }
+.fig .fw-mem { stroke: color-mix(in srgb, var(--mem) 55%, transparent); }
+.fig .fw-dash { stroke-dasharray: 3 3; }
+.fig .fw-dash.lit { stroke: var(--mem); }
+.fig .slot { fill: none; stroke: color-mix(in srgb, var(--text) 18%, transparent); stroke-width: 0.5px; }
+.fig .robslot.done { fill: color-mix(in srgb, var(--cpu) 30%, transparent); stroke: var(--cpu); }
+.fig .tok { stroke-width: 1px; rx: 3px; }
+.fig .tok-cpu { fill: color-mix(in srgb, var(--cpu) 22%, var(--surface)); stroke: var(--cpu); }
+.fig .tok-mem { fill: color-mix(in srgb, var(--mem) 22%, var(--surface)); stroke: var(--mem); }
+.fig .tok-gpu { fill: color-mix(in srgb, var(--gpu) 22%, var(--surface)); stroke: var(--gpu); }
+.fig .tok-math { fill: color-mix(in srgb, var(--math) 22%, var(--surface)); stroke: var(--math); }
+.fig .tok-err { fill: color-mix(in srgb, var(--err) 18%, var(--surface)); stroke: var(--err); }
+.fig .wait .tok { stroke: var(--err); stroke-dasharray: 3 2; }
+.fig .tok-t { font: 500 11px var(--mono); fill: var(--text); }
+.fig .badge { rx: 3px; stroke-width: 1px; }
+.fig .badge-mem { fill: color-mix(in srgb, var(--mem) 20%, var(--surface)); stroke: var(--mem); }
+.fig .badge-err { fill: color-mix(in srgb, var(--err) 18%, var(--surface)); stroke: var(--err); }
+.fig .badge-t { font: 600 11px var(--mono); fill: var(--text); }
+.fig .squash { fill: color-mix(in srgb, var(--err) 14%, transparent); stroke: var(--err); stroke-dasharray: 4 3; }
+/* cache */
+.fig .af { fill: color-mix(in srgb, var(--fk, var(--text)) 8%, var(--surface)); stroke-width: 1px; }
+.fig .af-tag { --fk: var(--cpu); stroke: var(--cpu); } .fig .af-idx { --fk: var(--mem); stroke: var(--mem); } .fig .af-off { --fk: var(--math); stroke: var(--math); }
+.fig .addr .af { stroke-opacity: 0.55; }
+.fig .addr.lit .af, .fig .lit > .af { stroke-opacity: 1; fill: color-mix(in srgb, var(--fk) 20%, var(--surface)); }
+.fig .bits { font: 500 15px var(--mono); fill: var(--text); letter-spacing: 0.12em; }
+.fig .cell-r { fill: none; stroke: color-mix(in srgb, var(--mem) 30%, transparent); stroke-width: 0.5px; }
+.fig .cell-tag { fill: color-mix(in srgb, var(--cpu) 10%, transparent); stroke: color-mix(in srgb, var(--cpu) 40%, transparent); stroke-width: 0.5px; }
+.fig .cell-tag.lit { fill: color-mix(in srgb, var(--cpu) 35%, transparent); stroke: var(--cpu); }
+.fig .cell.lit .cell-r { stroke: var(--mem); fill: color-mix(in srgb, var(--mem) 22%, transparent); }
+.fig .tagv { font: 600 10px var(--mono); fill: var(--text); }
+.fig .arr-out { fill: none; stroke: color-mix(in srgb, var(--mem) 50%, transparent); stroke-width: 1px; }
+.fig .setrow { fill: none; stroke: color-mix(in srgb, var(--mem) 40%, transparent); stroke-width: 1px; stroke-dasharray: 2 2; }
+.fig .setrow.lit { stroke: var(--mem); stroke-dasharray: none; stroke-width: 1.5px; fill: color-mix(in srgb, var(--mem) 10%, transparent); }
+.fig .scan { fill: color-mix(in srgb, var(--mem) 18%, transparent); stroke: var(--mem); stroke-width: 1px; }
+.fig .cmp-c { fill: var(--surface); stroke: color-mix(in srgb, var(--text) 35%, transparent); stroke-width: 1px; }
+.fig .cmp-t { font: 600 11px var(--mono); fill: var(--muted); }
+.fig .cmp.lit .cmp-c { stroke: var(--cpu); }
+.fig .cmp.match .cmp-c { stroke: var(--mem); fill: color-mix(in srgb, var(--mem) 30%, var(--surface)); }
+.fig .cmp.match .cmp-t { fill: var(--text); }
+.fig .cmp.nomatch .cmp-c { stroke: var(--err); fill: color-mix(in srgb, var(--err) 14%, var(--surface)); }
+.fig .fw-pulse { fill: none; stroke: var(--mem); stroke-width: 3px; }
+/* compute unit */
+.fig .wslot { fill: color-mix(in srgb, var(--text) 4%, transparent); stroke: color-mix(in srgb, var(--gpu) 30%, transparent); stroke-width: 0.5px; transition: fill 150ms; }
+.fig .wslot.full { fill: color-mix(in srgb, var(--gpu) 28%, transparent); stroke: var(--gpu); }
+.fig .wslot.wait { fill: color-mix(in srgb, var(--err) 30%, transparent); stroke: var(--err); }
+.fig .wslot.pick { fill: color-mix(in srgb, var(--cpu) 45%, transparent); stroke: var(--cpu); }
+.fig .part-out { fill: none; stroke: color-mix(in srgb, var(--gpu) 35%, transparent); stroke-width: 1px; }
+.fig .lane { fill: color-mix(in srgb, var(--gpu) 10%, transparent); stroke: color-mix(in srgb, var(--gpu) 45%, transparent); stroke-width: 0.5px; transition: fill 80ms; }
+.fig .lane-i { fill: color-mix(in srgb, var(--gpu) 5%, transparent); }
+.fig .col.fire .lane { fill: color-mix(in srgb, var(--gpu) 70%, transparent); stroke: var(--gpu); }
+.fig .regfill { fill: color-mix(in srgb, var(--mem) 35%, transparent); transform-box: fill-box; transform-origin: left center; transform: scaleX(0); }
+.fig .bank { fill: color-mix(in srgb, var(--mem) 10%, transparent); stroke: color-mix(in srgb, var(--mem) 40%, transparent); stroke-width: 0.5px; }
+.fig .bank.fire { fill: color-mix(in srgb, var(--mem) 60%, transparent); stroke: var(--mem); }
+.fig .fb.lit > .fb-r { stroke-width: 1.5px; }
+/* device memory */
+.fig .board { fill: color-mix(in srgb, var(--text) 2%, transparent); stroke: var(--hairline-2); stroke-width: 0.5px; stroke-dasharray: 3 3; }
+.fig .substrate { fill: var(--substrate); stroke: var(--hairline-2); stroke-width: 1px; }
+.fig .interposer { fill: var(--interposer); stroke: color-mix(in srgb, var(--text) 22%, transparent); stroke-width: 1px; }
+.fig .die-g { fill: color-mix(in srgb, var(--gpu) 8%, var(--silicon)); stroke: color-mix(in srgb, var(--gpu) 60%, transparent); stroke-width: 1px; }
+.fig .lit > .die-g, .fig .die-g.lit { stroke: var(--gpu); }
+.fig .chip-mem { fill: color-mix(in srgb, var(--mem) 6%, var(--silicon)); stroke: color-mix(in srgb, var(--mem) 60%, transparent); stroke-width: 1px; }
+.fig .sdie.lit .chip-mem { fill: color-mix(in srgb, var(--mem) 30%, var(--silicon)); stroke: var(--mem); }
+.fig .phy { fill: color-mix(in srgb, var(--mem) 35%, transparent); }
+.fig .trace { fill: none; stroke: color-mix(in srgb, var(--mem) 35%, transparent); stroke-width: 0.75px; }
+.fig .trace-pulse { fill: none; stroke: var(--mem); stroke-width: 2.5px; stroke-linecap: round; opacity: 0; }
+.fig .tsv { stroke: color-mix(in srgb, var(--text) 45%, transparent); stroke-width: 1px; stroke-dasharray: 2 2; }

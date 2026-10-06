@@ -11,7 +11,7 @@ export const LESSONS: Lesson[] = [
   P('f-bits', 'foundations', ['found.transistor'], 'beginner', 'Bits and transistors as switches', 'Everything is on or off.'),
   P('f-gates', 'foundations', ['found.gates', 'cpu.alu'], 'beginner', 'Gates → adder → ALU', 'Wire switches together and they add.'),
   P('f-clock', 'foundations', ['found.clock'], 'beginner', 'The clock: what "3 GHz" means', '0.33 ns per tick.'),
-  P('f-numbers', 'foundations', ['found.numbers', 'cpu.fpu'], 'intermediate', 'Binary, two’s complement and floating point', 'FP32, FP16, BF16, FP8 bit by bit.'),
+  P('f-numbers', 'foundations', ['found.numbers', 'cpu.fpsimd'], 'intermediate', 'Binary, two’s complement and floating point', 'FP32, FP16, BF16, FP8 bit by bit.'),
 
   // CPU · core
   P('c-fde', 'cpu', ['cpu.frontend', 'cpu.l1i'], 'beginner', 'Fetch, decode, execute', 'The loop every core runs.'),
@@ -19,9 +19,9 @@ export const LESSONS: Lesson[] = [
   P('c-pipe', 'cpu', ['cpu.decode', 'cpu.sched'], 'beginner', 'Pipelining', 'An assembly line for instructions.'),
   P('c-hazards', 'cpu', ['cpu.sched', 'cpu.alu'], 'intermediate', 'Hazards, stalls and forwarding', 'When the line has to wait.'),
   P('c-bpred', 'cpu', ['cpu.bpred'], 'beginner', 'Branch prediction', 'Guess, then check.'),
-  P('c-ooo', 'cpu', ['cpu.rob', 'cpu.sched', 'cpu.regs'], 'intermediate', 'Superscalar and out-of-order execution', 'Rename, reservation stations, reorder buffer.'),
-  P('c-simd', 'cpu', ['cpu.simd', 'cpu.fpu'], 'intermediate', 'SIMD: SSE, AVX, NEON', 'One instruction, many numbers.'),
-  P('c-smt', 'cpu', ['cpu.frontend', 'cpu.regs'], 'intermediate', 'Multithreading (SMT)', 'Two threads, one core.'),
+  P('c-ooo', 'cpu', ['cpu.rob', 'cpu.rename', 'cpu.sched', 'cpu.prf'], 'intermediate', 'Superscalar and out-of-order execution', 'Rename, reservation stations, reorder buffer.'),
+  P('c-simd', 'cpu', ['cpu.fpsimd'], 'intermediate', 'SIMD: SSE, AVX, NEON', 'One instruction, many numbers.'),
+  P('c-smt', 'cpu', ['cpu.core', 'cpu.frontend'], 'intermediate', 'Multithreading (SMT)', 'Two threads, one core.'),
 
   // CPU · memory
   P('m-wall', 'cpu', ['cpu.dram'], 'beginner', 'Why memory is slow: the memory wall', 'Cores got fast; memory didn’t.'),
@@ -31,34 +31,34 @@ export const LESSONS: Lesson[] = [
   P('m-prefetch', 'cpu', ['cpu.l2'], 'intermediate', 'Prefetching', 'Fetching before you ask.'),
   P('m-vm', 'cpu', ['cpu.tlb', 'cpu.lsu'], 'intermediate', 'Virtual memory, page tables and the TLB', 'Every program thinks it owns the machine.'),
   P('m-dram', 'cpu', ['cpu.dram', 'cpu.memctl'], 'intermediate', 'DRAM: rows, banks, refresh', 'Bandwidth vs latency, and Little’s law.'),
-  P('m-mesi', 'cpu', ['cpu.coherence', 'cpu.l3'], 'intermediate', 'Cache coherence (MESI) and false sharing', 'Keeping 16 cores honest.'),
+  P('m-mesi', 'cpu', ['cpu.coherence', 'cpu.l3', 'cpu.interconnect'], 'intermediate', 'Cache coherence (MESI) and false sharing', 'Keeping 16 cores honest.'),
 
   // CPU · chip & system
-  P('s-multicore', 'cpu', ['cpu.cores', 'cpu.fabric'], 'beginner', 'Multicore and interconnects', 'Amdahl’s law, speedup and efficiency.'),
+  P('s-multicore', 'cpu', ['cpu.core', 'cpu.interconnect'], 'beginner', 'Multicore and interconnects', 'Amdahl’s law, speedup and efficiency.'),
   P('s-numa', 'cpu', ['cpu.numa'], 'intermediate', 'NUMA', 'Near memory and far memory.'),
-  P('s-pcie', 'cpu', ['cpu.pcie', 'cpu.gpulink'], 'beginner', 'PCIe lanes and generations', 'Lanes × generation = bandwidth.'),
+  P('s-pcie', 'cpu', ['cpu.pcie'], 'beginner', 'PCIe lanes and generations', 'Lanes × generation = bandwidth.'),
   P('s-nvme', 'cpu', ['cpu.nvme'], 'beginner', 'Storage: NVMe', 'Why queues matter.'),
   P('s-power', 'cpu', ['cpu.power'], 'beginner', 'Power, heat and the end of Dennard scaling', 'Why clocks stopped rising.'),
 
   // GPU world
   simtWarps,
-  P('g-sm', 'gpu', ['gpu.sms', 'gpu.fp32', 'gpu.regfile'], 'intermediate', 'The SM in detail', 'Peak FLOP/s = SMs × lanes × 2 × clock.'),
+  P('g-sm', 'gpu', ['gpu.cu', 'gpu.valu', 'gpu.regfile', 'gpu.cluster', 'gpu.ldsfu'], 'intermediate', 'The SM in detail', 'Peak FLOP/s = SMs × lanes × 2 × clock.'),
   P('g-warpsched', 'gpu', ['gpu.warpsched'], 'beginner', 'Warp scheduling and latency hiding', 'Never wait: switch.'),
   P('g-occupancy', 'gpu', ['gpu.regfile', 'gpu.smem'], 'intermediate', 'Occupancy', 'Registers and shared memory decide how many warps fit.'),
   P('g-coalesce', 'gpu', ['gpu.smem', 'gpu.l2'], 'intermediate', 'Memory coalescing', '32 threads, how many transactions?'),
   P('g-bank', 'gpu', ['gpu.smem'], 'intermediate', 'Shared memory and bank conflicts', '32 banks, and why padding by 1 helps.'),
   P('g-diverge', 'gpu', ['gpu.warpsched'], 'beginner', 'Divergence', 'When threads in a warp disagree.'),
-  P('g-tensor', 'gpu', ['gpu.tensor'], 'intermediate', 'Tensor cores and MMA tiles', 'Multiplying tiles, not numbers.'),
-  P('g-hbm', 'gpu', ['gpu.hbm'], 'beginner', 'HBM: memory in a stack', 'A 1024-bit-wide road.'),
-  P('g-l2', 'gpu', ['gpu.l2', 'gpu.copy'], 'intermediate', 'L2 and the GPU memory hierarchy', 'Registers → shared → L2 → HBM.'),
-  P('g-nvlink', 'gpu', ['gpu.nvswitch', 'gpu.gpus', 'gpu.nics'], 'intermediate', 'NVLink, NVSwitch and multi-GPU', '900 GB/s between GPUs.'),
+  P('g-tensor', 'gpu', ['gpu.matrix'], 'intermediate', 'Tensor cores and MMA tiles', 'Multiplying tiles, not numbers.'),
+  P('g-hbm', 'gpu', ['gpu.devmem'], 'beginner', 'HBM: memory in a stack', 'A 1024-bit-wide road.'),
+  P('g-l2', 'gpu', ['gpu.l2', 'gpu.host_if', 'gpu.memctl'], 'intermediate', 'L2 and the GPU memory hierarchy', 'Registers → shared → L2 → HBM.'),
+  P('g-nvlink', 'gpu', ['gpu.links', 'gpu.node', 'gpu.nics'], 'intermediate', 'NVLink, NVSwitch and multi-GPU', '900 GB/s between GPUs.'),
 
   // Bridge · CPU vs GPU
   whyGpus,
-  P('b-side', 'bridge', ['bridge.side'], 'beginner', 'The same workload on both, side by side', 'Three races.'),
+  P('b-side', 'bridge', ['bridge.side', 'gpu.gfx'], 'beginner', 'The same workload on both, side by side', 'Three races.'),
   P('b-branch', 'bridge', ['bridge.branch', 'gpu.warpsched', 'cpu.bpred'], 'intermediate', 'Branch prediction vs warp divergence', 'Guessing vs splitting.'),
   P('b-caches', 'bridge', ['bridge.caches', 'gpu.regfile'], 'intermediate', 'Big caches vs huge register files', 'Where the transistors go.'),
-  P('b-pcie', 'bridge', ['bridge.pcie', 'gpu.host', 'gpu.copy'], 'beginner', 'The CPU feeding the GPU over PCIe', 'The copy before the compute.'),
+  P('b-pcie', 'bridge', ['bridge.pcie', 'gpu.host', 'gpu.host_if'], 'beginner', 'The CPU feeding the GPU over PCIe', 'The copy before the compute.'),
 
   // Bridge · AI hardware
   P('a-roofline', 'bridge', ['bridge.roofline'], 'intermediate', 'The roofline model', 'attainable = min(peak, I × BW).'),

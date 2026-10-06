@@ -171,3 +171,52 @@ export function coreInside(c: Rect) {
   };
 }
 export const CORE0_IN = coreInside(CORE0);
+
+// =====================================================================
+// Reference (generic) CPU: one monolithic die, 8 cores around a ring with
+// sliced shared L3; memory controller and PCIe on the same die; DIMMs off-package.
+// =====================================================================
+export const GEN_CPU_DIE: Rect = { x: 720, y: 570, w: 560, h: 360 };
+export function genCpuDie(d: Rect = GEN_CPU_DIE) {
+  const x0 = d.x + 72, cw = 98, gap = 8;
+  const cores: Rect[] = Array.from({ length: 8 }, (_, i) => ({ x: x0 + (i % 4) * (cw + gap), y: i < 4 ? d.y + 12 : d.y + d.h - 132, w: cw, h: 120 }));
+  const slices: Rect[] = cores.map((c, i) => ({ x: c.x, y: i < 4 ? d.y + 140 : d.y + d.h - 170, w: 78, h: 30 }));
+  const snoop: Rect[] = slices.map(s => ({ x: s.x + 80, y: s.y, w: 18, h: s.h }));
+  const ring: Rect = { x: d.x + 66, y: d.y + 172, w: d.w - 132, h: 16 };
+  // memory controller on the side facing the DIMMs, PCIe on the other side
+  const imc: Rect = { x: d.x + d.w - 60, y: d.y + 50, w: 50, h: d.h - 100 };
+  const io: Rect = { x: d.x + 10, y: d.y + 50, w: 50, h: d.h - 100 };
+  const pmu: Rect = { x: d.x + 10, y: d.y + 12, w: 50, h: 30 };
+  const stops = [...cores.slice(0, 4).map(c => c.x + c.w / 2), d.x + 66, d.x + d.w - 66];
+  return { die: d, cores, slices, snoop, ring, imc, io, pmu, stops };
+}
+export const GEN_CPU = genCpuDie();
+export const GEN_CORE0 = GEN_CPU.cores[0];
+export const GEN_CORE0_IN = coreInside(GEN_CORE0);
+
+// =====================================================================
+// Reference (generic) GPU: 4 clusters × 8 compute units, L2 across the middle,
+// memory controllers on the edges, device memory chips beside the package.
+// =====================================================================
+export function genGpuPackage(p: Rect) {
+  const substrate: Rect = { x: p.x + 250, y: p.y + 60, w: 500, h: 580 };
+  const die: Rect = { x: p.x + 290, y: p.y + 100, w: 420, h: 500 };
+  const mem: Rect[] = [0, 1, 2, 3].flatMap(k => [
+    { x: p.x + 40, y: p.y + 70 + k * 145, w: 170, h: 120 },
+    { x: p.x + 790, y: p.y + 70 + k * 145, w: 170, h: 120 },
+  ]);
+  const memctl: Rect[] = [{ x: die.x + 6, y: die.y + 40, w: 12, h: die.h - 80 }, { x: die.x + die.w - 18, y: die.y + 40, w: 12, h: die.h - 80 }];
+  const hostIf: Rect = { x: die.x + 26, y: die.y + 8, w: 150, h: 10 };
+  const cmd: Rect = { x: die.x + die.w / 2 - 40, y: die.y + 22, w: 80, h: 20 };
+  const links: Rect = { x: die.x + 26, y: die.y + die.h - 18, w: die.w - 52, h: 10 };
+  const ix = die.x + 26, cwid = (die.w - 52 - 8) / 2;
+  const clusters: Rect[] = [die.y + 50, die.y + 290].flatMap(y => [0, 1].map(k => ({ x: ix + k * (cwid + 8), y, w: cwid, h: 160 })));
+  const gfx: Rect[] = clusters.map(c => ({ x: c.x + 4, y: c.y + 4, w: c.w - 8, h: 14 }));
+  const cus: Rect[] = clusters.flatMap(c => Array.from({ length: 8 }, (_, i) => ({ x: c.x + 4 + (i % 4) * 44, y: c.y + 22 + Math.floor(i / 4) * 69, w: 40, h: 65 })));
+  const l2: Rect = { x: ix, y: die.y + 218, w: die.w - 52, h: 64 };
+  const l2h: Rect[] = [{ ...l2, w: l2.w / 2 - 2 }, { ...l2, x: l2.x + l2.w / 2 + 2, w: l2.w / 2 - 2 }];
+  return { substrate, die, mem, memctl, hostIf, cmd, links, clusters, gfx, cus, l2, l2h };
+}
+export const GEN_GPU0 = genGpuPackage(GPU_PKGS[0]);
+export const GEN_CU0 = GEN_GPU0.cus[0];
+export const GEN_CU0_IN = smInside(GEN_CU0);
